@@ -1,0 +1,4 @@
+.vscode
+.warehouse
+__pycache__
+*.egg-info
