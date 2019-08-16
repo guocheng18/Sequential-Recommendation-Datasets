@@ -1,22 +1,17 @@
 import argparse
 
-from srdatasets.generate import _generate
+from srdatasets.datasets import __datasets__
 from srdatasets.download import _download
-from srdatasets.utils import (
-    __datasets__,
-    _get_downloaded_datasets,
-    _get_processed_datasets,
-)
+from srdatasets.generate import _generate
+from srdatasets.utils import _get_downloaded_datasets, _get_processed_datasets
 
 parser = argparse.ArgumentParser("python -m srdatasets")
 subparsers = parser.add_subparsers()
 
-# Download
 parser_d = subparsers.add_parser("download", help="download raw datasets")
 group_c0 = parser_d.add_argument_group("common arguments")
 group_c0.add_argument("--dataset", type=str, default=None, help="dataset name")
 
-# Generate
 parser_g = subparsers.add_parser("generate", help="generate preprocessed datasets")
 group_c = parser_g.add_argument_group("common arguments")
 group_c.add_argument("--dataset", type=str, default=None, help="dataset name")

@@ -1,8 +1,9 @@
 import os
+from pathlib import Path
 
-__storage__ = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".warehouse")
+from srdatasets.datasets import _dataset_corefiles
 
-__datasets__ = ["movielens-20m", "lastfm-360k", "gowalla"]
+__warehouse__ = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(".warehouse")
 
 
 def _get_processed_datasets():
@@ -13,20 +14,15 @@ def _get_processed_datasets():
         "processed/test/test.pkl",
     ]
     D = []
-    for d in os.listdir(__storage__):
-        if all([os.path.exists(os.path.join(__storage__, d, p)) for p in P]):
-            D.append(d)
+    for d in __warehouse__.iterdir():
+        if all([__warehouse__.joinpath(d, p).exists() for p in P]):
+            D.append(d.stem)
     return D
 
 
 def _get_downloaded_datasets():  # Simple check, need improvments
-    M = {
-        "movielens-20m": "ratings.csv",
-        "lastfm-360k": "usersha1-artmbid-artname-plays.tsv",
-        "gowalla": "loc-gowalla_totalCheckins.txt",
-    }
     D = []
-    for d, filename in M.items():
-        if os.path.exists(os.path.join(__storage__, d, "raw", filename)):
+    for d, filename in _dataset_corefiles.items():
+        if __warehouse__.joinpath(d, "raw", filename).exists():
             D.append(d)
     return D

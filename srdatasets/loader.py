@@ -3,7 +3,7 @@ import os
 import pickle
 import random
 
-from srdatasets.utils import __storage__, _get_processed_datasets
+from srdatasets.utils import __warehouse__, _get_processed_datasets
 
 
 class DataLoader:

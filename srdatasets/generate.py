@@ -6,7 +6,8 @@ from typing import Dict, List, Optional, Tuple
 
 from pandas import DataFrame, Series
 
-from srdatasets.utils import __storage__
+from srdatasets.datasets import _dataset_classes
+from srdatasets.utils import __warehouse__
 
 # Typing aliases
 Sequence = List[int]
@@ -16,7 +17,13 @@ Dataset = List[Data]
 
 
 def _generate(args: Namespace) -> None:
-    pass
+    d = _dataset_classes[args.dataset](__warehouse__.joinpath(args.dataset, "raw"))
+    if args.dataset == "movielens-20m":
+        df = d.transform(args.rating_threshold)
+    else:
+        df = d.transform()
+    _preprocess_and_save(df, args)
+
 
 def _preprocess_and_save(df: DataFrame, args: Namespace) -> None:
     """General preprocessing method
@@ -128,7 +135,9 @@ def _drop_infrequent_items(df: DataFrame, min_freq: int) -> DataFrame:
 
 def dump(d_train: Dataset, d_test: Dataset, dname: str, dev: float = False) -> None:
     """ Save preprocessed datasets """
-    dump_path = os.path.join(__storage__, dname, "processed", "dev" if dev else "test")
+    dump_path = os.path.join(
+        __warehouse__, dname, "processed", "dev" if dev else "test"
+    )
     os.makedirs(dump_path, exist_ok=True)
     with open(os.path.join(dump_path, "train.pkl"), "wb") as f:
         pickle.dump(d_train, f)

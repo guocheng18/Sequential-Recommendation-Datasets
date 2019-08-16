@@ -1,21 +1,24 @@
-from abc import ABC, abstractmethod
+from pathlib import Path
+
+from pandas import DataFrame
 
 
-class Dataset(ABC):
+class Dataset(object):
     """ Base class of datasets, each dataset should inherit `download`
-     (Implementation of downloading raw datasets) and `transform` method 
-     (Transform raw data format to general data format)
+     (implementation of downloading raw datasets) and `transform` method 
+     (transforming raw data format to general data format)
     """
 
-    @abstractmethod
-    def download(self, dest: str):
-        """ Download and extract raw dataset files """
-        ...
+    def __init__(self, home: Path):
+        """ `home` is local path of the raw dataset """
+        self.home = home
 
-    @abstractmethod
-    def transform(self, *args):
-        """ Transform to the general data format:
-        a pd.DataFrame instance that contains three columns: 
-        [user_id, item_id, timestamp]
+    def download(self) -> None:
+        """ Download and extract raw dataset files """
+        raise NotImplementedError
+
+    def transform(self, *args) -> DataFrame:
+        """ Transform to the general data format, which is
+        a pd.DataFrame instance that contains three columns: [user_id, item_id, timestamp]
         """
-        ...
+        raise NotImplementedError
