@@ -20,7 +20,9 @@ def _get_processed_datasets():
     return D
 
 
-def _get_downloaded_datasets():  # Simple check, need improvments
+def _get_downloaded_datasets():
+    """ Simple check based on the existences of corefiles 
+    """
     D = []
     for d, filename in _dataset_corefiles.items():
         if __warehouse__.joinpath(d, "raw", filename).exists():

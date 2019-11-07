@@ -1,1 +1,1 @@
-from srdatasets.loader import DataLoader
+from srdatasets.dataloader import DataLoader

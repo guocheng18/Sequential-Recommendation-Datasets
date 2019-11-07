@@ -37,21 +37,30 @@ class DataLoader:
                 )
             )
 
-        data_path = "./datasets/{}/processed/{}/{}.pkl".format(
-            dataset_name, mode, "train" if train else "test"
+        dataset_path = __warehouse__.joinpath(
+            dataset_name,
+            "processed",
+            "dev" if development else "test",
+            "train.pkl" if train else "test.pkl",
         )
-        with open(data_path, "rb") as f:
+        with open(dataset_path, "rb") as f:
             self.dataset = pickle.load(f)  # list
+
+        if batch_size <= 0:
+            raise ValueError("batch_size should be at least 1")
+        if batch_size > len(self.dataset):
+            raise ValueError("batch_size exceeds the dataset size")
 
         self.batch_size = batch_size
         self.train = train
-        self._batch_count = 0
+        self._batch_index = 0
 
     def __iter__(self):
         return self
 
     def __len__(self):
-        """ Number of batches """
+        """Number of batches
+        """
         return math.ceil(len(self.dataset) / self.batch_size)
 
     def __next__(self):
@@ -60,18 +69,17 @@ class DataLoader:
             user_ids: (batch_size,)
             input sequences: (batch_size, input_len)
             target sequences: (batch_size, target_len)
-            negative samples: (batch_size, target_len, n_negatives) # Train only
         """
-        if self._batch_count == len(self):
-            self._batch_count = 0
+        if self._batch_index == len(self):
+            self._batch_index = 0
             raise StopIteration
         else:
-            if self._batch_count == 0 and self.train:
+            if self._batch_index == 0 and self.train:
                 random.shuffle(self.dataset)
             batch = self.dataset[
-                self._batch_count
-                * self.batch_size : (self._batch_count + 1)
+                self._batch_index
+                * self.batch_size : (self._batch_index + 1)
                 * self.batch_size
             ]
-            self._batch_count += 1
+            self._batch_index += 1
             return list(zip(*batch))

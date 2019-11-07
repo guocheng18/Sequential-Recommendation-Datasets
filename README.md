@@ -26,7 +26,7 @@ python generate/movielens-20m.py # add -h option to see possible settings
 ```python
 from dataloader import DataLoader
 
-# For development (search hyperparameters)
+# For development (tune hyperparameters)
 trainloader = DataLoader("movielens-20m", batch_size=32, Train=True, development=True)
 testloader = DataLoader("movielens-20m", batch_size=32, Train=False, development=True)
 

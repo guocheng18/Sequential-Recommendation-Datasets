@@ -9,9 +9,9 @@ _dataset_classes = {
 }
 
 _dataset_corefiles = {
-    "movielens-20m": "ratings.csv",
-    "lastfm-360k": "usersha1-artmbid-artname-plays.tsv",
-    "gowalla": "loc-gowalla_totalCheckins.txt",
+    "movielens-20m": MovieLens20M().__corefile__,
+    "lastfm-360k": Lastfm360K().__corefile__,
+    "gowalla": Gowalla().__corefile__,
 }
 
 __datasets__ = _dataset_classes.keys()

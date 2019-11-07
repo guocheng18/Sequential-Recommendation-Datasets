@@ -1,29 +1,42 @@
+import glob
 import gzip
+import logging
 import os
 import shutil
+from urllib.parse import urlparse
 
 import pandas as pd
 import wget
 from pandas import DataFrame
 
-from srdatasets.datasets.base import Dataset
+from srdatasets.datasets.dataset import Dataset
+
+logger = logging.getLogger(__name__)
 
 
 class Gowalla(Dataset):
 
-    __url__ = "https://snap.stanford.edu/data/loc-gowalla_totalCheckins.txt.gz"
+    __download_url__ = "https://snap.stanford.edu/data/loc-gowalla_totalCheckins.txt.gz"
+    __corefile__ = "loc-gowalla_totalCheckins.txt"
 
     def download(self) -> None:
-        wget.download(self.__url__, out=self.home)
+        try:
+            wget.download(self.__download_url__, out=self.home)
+            logger.info("Download successful, unzipping...")
+        except:
+            logger.exception("Download failed, please retry")
+            for f in glob.glob(self.home.joinpath("*.tmp")):
+                os.remove(f)
+            return
 
-        _zipped_file = self.home.joinpath("loc-gowalla_totalCheckins.txt.gz")
-        _unzipped_file = self.home.joinpath("loc-gowalla_totalCheckins.txt")
+        zipfile_name = os.path.basename(urlparse(self.__download_url__).path)
+        zipfile_path = self.home.joinpath(zipfile_name)
+        unzipfile_path = self.home.joinpath(self.__corefile__)
 
-        with gzip.open(_zipped_file, "rb") as f_in:
-            with open(_unzipped_file, "w") as f_out:
+        with gzip.open(zipfile_path, "rb") as f_in:
+            with open(unzipfile_path, "w") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-
-        os.remove(_zipped_file)
+        logger.info("Finished")
 
     def transform(self, *args) -> DataFrame:
         pass

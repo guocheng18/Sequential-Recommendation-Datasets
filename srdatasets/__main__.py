@@ -1,20 +1,26 @@
 import argparse
+import logging
 
 from srdatasets.datasets import __datasets__
 from srdatasets.download import _download
 from srdatasets.generate import _generate
 from srdatasets.utils import _get_downloaded_datasets, _get_processed_datasets
 
-parser = argparse.ArgumentParser("python -m srdatasets")
-subparsers = parser.add_subparsers()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(filename)s:%(lineno)d] %(message)s",
+    datefmt="%m/%d/%Y %H:%M:%S",
+)
 
+parser = argparse.ArgumentParser("python -m srdatasets")
+parser.add_argument(
+    "--dataset", type=str, default=None, required=True, help="dataset name"
+)
+subparsers = parser.add_subparsers()
 parser_d = subparsers.add_parser("download", help="download raw datasets")
-group_c0 = parser_d.add_argument_group("common arguments")
-group_c0.add_argument("--dataset", type=str, default=None, help="dataset name")
 
 parser_g = subparsers.add_parser("generate", help="generate preprocessed datasets")
 group_c = parser_g.add_argument_group("common arguments")
-group_c.add_argument("--dataset", type=str, default=None, help="dataset name")
 group_c.add_argument(
     "--dev-ratio", type=float, default=0.1, help="the fraction of developemnt dataset"
 )
@@ -29,8 +35,8 @@ group_c.add_argument(
 )
 group_c.add_argument("--input-len", type=int, default=5, help="input sequence length")
 group_c.add_argument("--target-len", type=int, default=3, help="target sequence length")
-group_c.add_argument("--verbose", action="store_true", help="print statistics")
-group_c.add_argument(
+group_c.add_argument("--logstat", action="store_true", help="print statistics")
+group_c.add_argument(  # Not implemented
     "--n-negatives-per-target",
     type=int,
     default=1,
@@ -45,7 +51,7 @@ group_d.add_argument(
 )
 args = parser.parse_args()
 
-subcommand = "generate" if "verbose" in args else "download"
+subcommand = "generate" if "logstat" in args else "download"
 
 downloaded_datasets = _get_downloaded_datasets()
 processed_datasets = _get_processed_datasets()

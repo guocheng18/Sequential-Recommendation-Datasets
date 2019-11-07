@@ -1,19 +1,18 @@
 import math
 import os
 import pickle
+import logging
 from argparse import Namespace
-from typing import Dict, List, Optional, Tuple
 
 from pandas import DataFrame, Series
 
 from srdatasets.datasets import _dataset_classes
+from srdatasets.types import Data, Dataset, List, Optional, Sequence, SequenceMap, Tuple
 from srdatasets.utils import __warehouse__
 
-# Typing aliases
-Sequence = List[int]
-SequenceMap = Dict[int, Sequence]
-Data = Tuple[int, Sequence, Sequence]
-Dataset = List[Data]
+# TODO add negative samples, timestamps etc
+
+logger = logging.getLogger(__name__)
 
 
 def _generate(args: Namespace) -> None:
@@ -34,22 +33,27 @@ def _preprocess_and_save(df: DataFrame, args: Namespace) -> None:
     """
     # Generate sequences
     seqs = _generate_sequences(df, args.min_freq_item, args.min_freq_user)
-    if args.verbose:
+    if args.logstat:
         log_sequences_info(seqs)
     # Create datasets
+    logger.info("Splitting sequences into train/test...")
     d_train, d_test = _split_sequences(seqs.to_dict(), args.target_len, args.test_ratio)
+    logger.info("Splitting sequences into train-train/train-dev...")
     d_train_dev, d_test_dev = _split_sequences(d_train, args.target_len, args.dev_ratio)
     # Augment datasets
+    logger.info("Augmenting train/test/train-train/train-dev...")
     d_train, d_test, d_train_dev, d_test_dev = [
         _augment_dataset(d, args.input_len, args.target_len)
         for d in [d_train, d_test, d_train_dev, d_test_dev]
     ]
-    if args.verbose:
+    if args.logstat:
         log_datasets_info(d_train, d_test, print_title="test")
         log_datasets_info(d_train_dev, d_test_dev, print_title="dev")
     # Dump to files
+    logger.info("Dumping...")
     dump(d_train, d_test, args.dataset, dev=False)
     dump(d_train_dev, d_test_dev, args.dataset, dev=True)
+    logger.info("OK")
 
 
 def _generate_sequences(
@@ -57,12 +61,21 @@ def _generate_sequences(
 ) -> Series:
     """When renumbering items, 0 is kept for padding sequences
     """
+    logger.warning("Dropping items (freq < {})...".format(min_freq_item))
     df = _drop_infrequent_items(df, min_freq_item)
+
+    logger.warning("Dropping users (freq < {})...".format(min_freq_user))
     df = _drop_infrequent_users(df, min_freq_user)
-    item_mapper = dict(zip(df.item_id.unique(), range(1, df.item_id.nunique() + 1)))
-    df.item_id = df.item_id.map(item_mapper)
+
+    logger.info("Remapping item ids...")
+    item_mapper = dict(
+        zip(df["item_id"].unique(), range(1, df["item_id"].nunique() + 1))
+    )
+    df["item_id"] = df["item_id"].map(item_mapper)
+
+    logger.info("Generating all users' sequences...")
     df = df.sort_values("timestamp")
-    seqs = df.groupby("user_id").item_id.apply(list).reset_index(drop=True)
+    seqs = df.groupby("user_id")["item_id"].apply(list).reset_index(drop=True)
     return seqs
 
 
@@ -86,6 +99,7 @@ def _split_sequences(
         else:
             pass  # drop
     for user_id, seq in list(test_seqmap.items()):
+        # Filter out items that not in trainset
         seq_new = [i for i in seq if i in itemset]
         if len(seq_new) > target_len:
             test_seqmap[user_id] = seq_new
@@ -105,9 +119,12 @@ def _augment_dataset(dataset: SequenceMap, input_len: int, target_len: int) -> D
 def _augment_sequence(
     seq: Sequence, user_id: int, input_len: int, target_len: int
 ) -> List[Data]:
-    """ `seq` is assumed to be longer than `target_len` """
+    """ `seq` is assumed to be longer than `target_len`, 
+    this has been guaranteed when splitting sequences
+    """
     lack_num = input_len + target_len - len(seq)
     if lack_num > 0:
+        # padding 0
         datalist = [(user_id, [0] * lack_num + seq[:-target_len], seq[-target_len:])]
     else:
         datalist = [
@@ -145,10 +162,10 @@ def dump(d_train: Dataset, d_test: Dataset, dname: str, dev: float = False) -> N
         pickle.dump(d_test, f)
 
 
-def log_sequences_info(seqs: Series) -> None:
+def log_sequences_info(seqs: Series):
     lens = seqs.apply(len)
-    print(
-        "{}> sequences info\ncount\tmin\tmax\tmean\n{}\t{}\t{}\t{}".format(
+    logger.info(
+        "\n{}> sequences info\ncount\tmin\tmax\tmean\n{}\t{}\t{}\t{}\n".format(
             "=" * 10, seqs.count(), lens.min(), lens.max(), lens.mean()
         )
     )
@@ -156,15 +173,15 @@ def log_sequences_info(seqs: Series) -> None:
 
 def log_datasets_info(
     d_train: Dataset, d_test: Dataset, print_title: Optional[str] = None
-) -> None:
+):
     users = set()
     items = set()
     for user_id, inputs, targets in d_train:
         users.add(user_id)
         items.update(inputs)
         items.update(targets)
-    print(
-        "{}> {}\ntotal_users\ttotal_items\ttrain_size\ttest_size\n{}\t{}\t{}\t{}".format(
+    logger.info(
+        "\n{}> {}\ntotal_users\ttotal_items\ttrain_size\ttest_size\n{}\t{}\t{}\t{}\n".format(
             "=" * 10, print_title, len(users), len(items), len(d_train), len(d_test)
         )
     )

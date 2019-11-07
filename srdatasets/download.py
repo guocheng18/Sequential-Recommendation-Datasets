@@ -14,5 +14,3 @@ def _download(dataset_name: str) -> None:
         os.makedirs(_rawdir)
 
     _dataset_classes[dataset_name](_rawdir).download()
-
-    print("done.")
