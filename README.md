@@ -33,7 +33,7 @@ python -m srdatasets download --dataset="MovieLens-20M"
 ```bash
 python -m srdatasets process --dataset="MovieLens-20M"
 
-# Add -h option to see all specific settings when processing datasets
+# Add -h option to see all specific settings of dataset processing
 python -m srdatasets process -h
 ```
 3. Check local datasets info
@@ -55,23 +55,24 @@ testloader = DataLoader("MovieLens-20M", batch_size=32, Train=False, development
 for epoch in range(10):
 
     # Train
-    for user_ids, input_items, target_items in trainloader:
+    for user_ids, input_item_ids, target_items_id in trainloader:
         # Shapes
         # user_ids: (batch_size,)
-        # input_items: (batch_size, input_len)
-        # target_items: (batch_size, target_len)
+        # input_item_ids: (batch_size, input_len)
+        # target_item_ids: (batch_size, target_len)
         ...
 
     # Evaluate
-    for user_ids, input_items, target_items in testloader:
+    for user_ids, input_item_ids, target_item_ids in testloader:
         ...
 ```
 
 ## TODO
 - [ ] Add negative sampling
 - [ ] Add timestamp feature to dataset
-- [ ] Enable loading datasets with different configs
+- [ ] Enable loading datasets with different processing setttings
 - [ ] Store dataset statistics to local
+- [ ] Support Custom datasets
 
 
 ## Disclaimers
