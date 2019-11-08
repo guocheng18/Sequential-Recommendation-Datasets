@@ -1,5 +1,4 @@
 import argparse
-import sys
 import logging
 
 from srdatasets.datasets import __datasets__
@@ -14,23 +13,17 @@ logging.basicConfig(
 )
 
 parser = argparse.ArgumentParser("python -m srdatasets")
-subparsers = parser.add_subparsers()
-# subcommmand = info
+subparsers = parser.add_subparsers(help="commands", dest="command")
+# commmand = info
 parser_i = subparsers.add_parser("info", help="print local datasets info")
-parser_i.add_argument(
-    "--downloaded", action="store_true", help="print downloaded datasets"
-)
-parser_i.add_argument(
-    "--processed", action="store_true", help="print processed datasets"
-)
 
 # subcommmand = download
 parser_d = subparsers.add_parser("download", help="download raw datasets")
-parser_d.add_argument("--dataset", type=str, default=None, help="dataset name")
+parser_d.add_argument("--dataset", type=str, required=True, help="dataset name")
 
 # subcommmand = generate
 parser_g = subparsers.add_parser("generate", help="generate preprocessed datasets")
-parser_g.add_argument("--dataset", type=str, default=None, help="dataset name")
+parser_g.add_argument("--dataset", type=str, required=True, help="dataset name")
 parser_g.add_argument(
     "--dev-ratio", type=float, default=0.1, help="the fraction of developemnt dataset"
 )
@@ -48,12 +41,6 @@ parser_g.add_argument(
     "--target-len", type=int, default=3, help="target sequence length"
 )
 parser_g.add_argument("--logstat", action="store_true", help="print statistics")
-parser_g.add_argument(  # Not implemented
-    "--n-negatives-per-target",
-    type=int,
-    default=1,
-    help="number of negative samples per target",
-)
 parser_g.add_argument(
     "--rating-threshold",
     type=int,
@@ -69,37 +56,28 @@ parser_g.add_argument(
 args = parser.parse_args()
 
 
-if "downloaded" in args.__dict__:
-    subcommand = "info"
-elif "logstat" in args.__dict__:
-    subcommand = "generate"
-elif len(args.__dict__) > 0:
-    subcommand = "download"
-else:
+if args.command is None:
     parser.print_help()
-    sys.exit()
-
-
-downloaded_datasets = _get_downloaded_datasets()
-processed_datasets = _get_processed_datasets()
-
-if subcommand == "download":
-    assert args.dataset in __datasets__, "Supported datasets: {}".format(
-        ", ".join(__datasets__)
-    )
-    assert args.dataset not in downloaded_datasets, "You have downloaded this dataset!"
-    _download(args.dataset)
-elif subcommand == "generate":
-    assert args.dataset in downloaded_datasets, "You haven't downloaded this dataset!"
-    assert (
-        args.min_freq_user > args.target_len
-    ), "min_freq_user should be greater than target_len"
-    _generate(args)
 else:
-    if not args.downloaded and not args.processed:
-        parser_i.print_help()
+    downloaded_datasets = _get_downloaded_datasets()
+    processed_datasets = _get_processed_datasets()
+
+    if args.command == "download":
+        assert args.dataset in __datasets__, "Supported datasets: {}".format(
+            ", ".join(__datasets__)
+        )
+        assert args.dataset not in downloaded_datasets, "This dataset was downloaded!"
+        _download(args.dataset)
+    elif args.command == "generate":
+        assert args.dataset in downloaded_datasets, "This dataset wasn't downloaded!"
+        assert (
+            args.min_freq_user > args.target_len
+        ), "min_freq_user should be greater than target_len"
+        _generate(args)
     else:
-        if args.downloaded:
-            print("Downloaded datasets: {}".format(", ".join(downloaded_datasets)))
-        if args.processed:
-            print("Processed datasets: {}".format(", ".join(processed_datasets)))
+        print(
+            "Downloaded datasets: {}\nProcessed datasets: {}".format(
+                ", ".join(downloaded_datasets), ", ".join(processed_datasets)
+            )
+        )
+
