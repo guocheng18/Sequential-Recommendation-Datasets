@@ -3,7 +3,7 @@ import logging
 
 from srdatasets.datasets import __datasets__
 from srdatasets.download import _download
-from srdatasets.generate import _generate
+from srdatasets.process import _process
 from srdatasets.utils import _get_downloaded_datasets, _get_processed_datasets
 
 logging.basicConfig(
@@ -17,12 +17,12 @@ subparsers = parser.add_subparsers(help="commands", dest="command")
 # commmand = info
 parser_i = subparsers.add_parser("info", help="print local datasets info")
 
-# subcommmand = download
-parser_d = subparsers.add_parser("download", help="download raw datasets")
+# commmand = download
+parser_d = subparsers.add_parser("download", help="download datasets")
 parser_d.add_argument("--dataset", type=str, required=True, help="dataset name")
 
-# subcommmand = generate
-parser_g = subparsers.add_parser("generate", help="generate preprocessed datasets")
+# commmand = process
+parser_g = subparsers.add_parser("process", help="process datasets")
 parser_g.add_argument("--dataset", type=str, required=True, help="dataset name")
 parser_g.add_argument(
     "--dev-ratio", type=float, default=0.1, help="the fraction of developemnt dataset"
@@ -68,12 +68,12 @@ else:
         )
         assert args.dataset not in downloaded_datasets, "This dataset was downloaded!"
         _download(args.dataset)
-    elif args.command == "generate":
+    elif args.command == "process":
         assert args.dataset in downloaded_datasets, "This dataset wasn't downloaded!"
         assert (
             args.min_freq_user > args.target_len
         ), "min_freq_user should be greater than target_len"
-        _generate(args)
+        _process(args)
     else:
         print(
             "Downloaded datasets: {}\nProcessed datasets: {}".format(

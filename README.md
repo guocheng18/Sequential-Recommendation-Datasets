@@ -1,54 +1,78 @@
 # Sequential Recommendation Datasets
 This repo simplifies how sequential recommendation datasets are used.
 <p>
-    <img src="https://img.shields.io/badge/python->=3.5-brightgreen?style=flat-square"/>
     <img src="https://img.shields.io/badge/pandas->=0.24-brightgreen?style=flat-square"/>
+    <img src="https://img.shields.io/badge/python->=3.5-brightgreen?style=flat-square"/>
+    <img src="https://img.shields.io/badge/pypi-v0.0.1-brightgreen?style=flat-square"/>
 </p>
 
-## Included datasets
-- MovieLens-20M
-- Last.fm-360K
-- Gowalla
+## Datasets
+Name | Item | Website
+---- | ---- | -------
+MovieLens-20M | Movie | https://grouplens.org/datasets/movielens/
+Last.fm-1K | Artist or Music | http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
+Gowalla | Check-in | https://snap.stanford.edu/data/loc-Gowalla.html
 
-## Data format
+## Installation
+Install from pypi:
+```
+pip install srdatasets
+```
+Or from Github for the latest version:
+```
+pip install git+https://github.com/guocheng2018/sequential-recommendation-datasets.git
+```
 
 ## Usage
 
-1. Download a dataset, for example `MovieLens-20M`, run
+1. Download a dataset, for example `MovieLens-20M`
 ```bash
-bash download_scripts/movielens-20m.sh
+python -m srdatasets download --dataset="MovieLens-20M"
 ```
-2. Generate processed dataset, run
+2. Process the downloaded dataset with details logged to console
 ```bash
-python generate/movielens-20m.py # add -h option to see possible settings
+python -m srdatasets process --dataset="MovieLens-20M"
+
+# Add -h option to see all specific settings when processing datasets
+python -m srdatasets process -h
 ```
-3. Use DataLoader to get data batchly, for example:
+3. Check local datasets info
+```
+python -m srdatasets info
+```
+4. Use `srdatasets.DataLoader` to get data batchly
 ```python
-from dataloader import DataLoader
+from srdatasets import DataLoader
 
 # For development (tune hyperparameters)
-trainloader = DataLoader("movielens-20m", batch_size=32, Train=True, development=True)
-testloader = DataLoader("movielens-20m", batch_size=32, Train=False, development=True)
+trainloader = DataLoader("MovieLens-20M", batch_size=32, Train=True, development=True)
+testloader = DataLoader("MovieLens-20M", batch_size=32, Train=False, development=True)
 
 # For performance test
-trainloader = DataLoader("movielens-20m", batch_size=32, Train=True, development=False)
-testloader = DataLoader("movielens-20m", batch_size=32, Train=False, development=False)
+trainloader = DataLoader("MovieLens-20M", batch_size=32, Train=True, development=False)
+testloader = DataLoader("MovieLens-20M", batch_size=32, Train=False, development=False)
 
 for epoch in range(10):
 
     # Train
-    for users, inputs, targets, negatives in trainloader:
+    for user_ids, input_items, target_items in trainloader:
         # Shapes
-        # users: (batch_size,)
-        # inputs: (batch_size, input_len)
-        # targets: (batch_size, target_len)
-        # negatives: (batch_size, target_len, n_negatives)
+        # user_ids: (batch_size,)
+        # input_items: (batch_size, input_len)
+        # target_items: (batch_size, target_len)
         ...
 
     # Evaluate
-    for users, inputs, targets in testloader:
+    for user_ids, input_items, target_items in testloader:
         ...
 ```
+
+## TODO
+- [ ] Add negative sampling
+- [ ] Add timestamp feature to dataset
+- [ ] Enable loading datasets with different configs
+- [ ] Store dataset statistics to local
+
 
 ## Disclaimers
 The datasets have their own licenses, this repo (under MIT license) only provides an way to use them.

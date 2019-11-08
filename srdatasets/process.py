@@ -20,7 +20,7 @@ Data = Tuple[int, Sequence, Sequence]
 Dataset = List[Data]
 
 
-def _generate(args: Namespace) -> None:
+def _process(args: Namespace) -> None:
     d = _dataset_classes[args.dataset](__warehouse__.joinpath(args.dataset, "raw"))
     if args.dataset == "movielens-20m":
         df = d.transform(args.rating_threshold)
