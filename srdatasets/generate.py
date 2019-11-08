@@ -1,24 +1,31 @@
+import logging
 import math
 import os
 import pickle
-import logging
 from argparse import Namespace
+from typing import Dict, List, Optional, Tuple
 
 from pandas import DataFrame, Series
 
 from srdatasets.datasets import _dataset_classes
-from srdatasets.types import Data, Dataset, List, Optional, Sequence, SequenceMap, Tuple
 from srdatasets.utils import __warehouse__
 
 # TODO add negative samples, timestamps etc
 
 logger = logging.getLogger(__name__)
 
+Sequence = List[int]
+SequenceMap = Dict[int, Sequence]
+Data = Tuple[int, Sequence, Sequence]
+Dataset = List[Data]
+
 
 def _generate(args: Namespace) -> None:
     d = _dataset_classes[args.dataset](__warehouse__.joinpath(args.dataset, "raw"))
     if args.dataset == "movielens-20m":
         df = d.transform(args.rating_threshold)
+    elif args.dataset == "lastfm-1k":
+        df = d.transform(args.item_type)
     else:
         df = d.transform()
     _preprocess_and_save(df, args)

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from srdatasets.datasets import _dataset_corefiles
 
-__warehouse__ = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(".warehouse")
+__warehouse__ = Path(os.path.expanduser("~")).joinpath(".srdatasets")
 
 
 def _get_processed_datasets():

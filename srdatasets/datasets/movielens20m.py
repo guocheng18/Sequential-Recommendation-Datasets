@@ -36,7 +36,7 @@ class MovieLens20M(Dataset):
 
         shutil.move(unzip_folder.joinpath("*"), self.home)
         os.rmdir(unzip_folder)
-        logger.info("Finished")
+        logger.info("Finished, dataset location: %s", self.home)
 
     def transform(self, rating_threshold) -> DataFrame:
         """ Records with rating less than `rating_threshold` are dropped

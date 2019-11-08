@@ -49,6 +49,12 @@ group_d.add_argument(
     default=4,
     help="[movielens-20m only] ratings great or equal than this are treated as valid",
 )
+group_d.add_argument(
+    "--item-type",
+    type=str,
+    default="song",
+    help="[lastfm-1k only] recommned artists or songs (artist | song)",
+)
 args = parser.parse_args()
 
 subcommand = "generate" if "logstat" in args else "download"
