@@ -1,14 +1,11 @@
 import glob
 import logging
 import os
-import shutil
 import tarfile
 from datetime import datetime
-from urllib.parse import urlparse
 
 import pandas as pd
 import wget
-from pandas import DataFrame
 
 from srdatasets.datasets.dataset import Dataset
 
@@ -17,33 +14,30 @@ logger = logging.getLogger(__name__)
 
 class Lastfm1K(Dataset):
 
-    __download_url__ = (
-        "http://mtg.upf.edu/static/datasets/last.fm/lastfm-dataset-1K.tar.gz"
+    __url__ = "http://mtg.upf.edu/static/datasets/last.fm/lastfm-dataset-1K.tar.gz"
+    __corefile__ = os.path.join(
+        "lastfm-dataset-1K", "userid-timestamp-artid-artname-traid-traname.tsv"
     )
-    __corefile__ = "userid-timestamp-artid-artname-traid-traname.tsv"
 
     def download(self) -> None:
         try:
-            wget.download(self.__download_url__, out=self.home)
+            wget.download(self.__url__, out=self.home.as_posix())
             logger.info("Download successful, unzipping...")
         except:
             logger.exception("Download failed, please retry")
-            for f in glob.glob(self.home.joinpath("*.tmp")):
+            for f in glob.glob(
+                os.path.join(os.getcwd(), "lastfm-dataset-1K.tar.gz*.tmp")
+            ):
                 os.remove(f)
             return
 
-        zipfile_name = os.path.basename(urlparse(self.__download_url__).path)
-        zipfile_path = self.home.joinpath(zipfile_name)
-
+        zipfile_path = self.home.joinpath("lastfm-dataset-1K.tar.gz")
         with tarfile.open(zipfile_path) as tar:
             tar.extractall(self.home)
 
-        unzip_folder = self.home.joinpath("lastfm-dataset-1K")
-        shutil.move(unzip_folder.joinpath("*"), self.home)
-        os.rmdir(unzip_folder)
         logger.info("Finished, dataset location: %s", self.home)
 
-    def transform(self, item_type="song") -> DataFrame:
+    def transform(self, item_type="song") -> pd.DataFrame:
         """ item_type can be `artist` or `song`
         """
         df = pd.read_csv(

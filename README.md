@@ -9,9 +9,15 @@ This repo simplifies how sequential recommendation datasets are used.
 ## Datasets
 Name | Item | Website
 ---- | ---- | -------
-MovieLens-20M | Movie | https://grouplens.org/datasets/movielens/
+Amazon-CDs | CD | http://jmcauley.ucsd.edu/data/amazon/
+Amazon-Electronics | Electronics | http://jmcauley.ucsd.edu/data/amazon/
+Book-Crossing | Book | http://www2.informatik.uni-freiburg.de/~cziegler/BX/
+FourSquare-NYC | Location | https://sites.google.com/site/yangdingqi/home/foursquare-dataset
+FourSquare-Tokyo | Location | https://sites.google.com/site/yangdingqi/home/foursquare-dataset
+Gowalla | Location | https://snap.stanford.edu/data/loc-Gowalla.html
 Last.fm-1K | Artist or Music | http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
-Gowalla | Check-in | https://snap.stanford.edu/data/loc-Gowalla.html
+MovieLens-20M | Movie | https://grouplens.org/datasets/movielens/
+Yelp | Business | https://www.yelp.com/dataset
 
 ## Installation
 Install from pypi:
@@ -68,9 +74,9 @@ for epoch in range(10):
 ```
 
 ## TODO
+- [ ] Enable loading datasets with different processing setttings
 - [ ] Add negative sampling
 - [ ] Add timestamp feature to dataset
-- [ ] Enable loading datasets with different processing setttings
 - [ ] Store dataset statistics to local
 - [ ] Support Custom datasets
 

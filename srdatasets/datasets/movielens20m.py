@@ -6,7 +6,6 @@ from zipfile import ZipFile
 
 import pandas as pd
 import wget
-from pandas import DataFrame
 
 from srdatasets.datasets.dataset import Dataset
 
@@ -15,30 +14,26 @@ logger = logging.getLogger(__name__)
 
 class MovieLens20M(Dataset):
 
-    __download_url__ = "http://files.grouplens.org/datasets/movielens/ml-20m.zip"
-    __corefile__ = "ratings.csv"
+    __url__ = "http://files.grouplens.org/datasets/movielens/ml-20m.zip"
+    __corefile__ = os.path.join("ml-20m", "ratings.csv")
 
     def download(self) -> None:
         try:
-            wget.download(self.__download_url__, out=self.home)
+            wget.download(self.__url__, out=self.home.as_posix())
             logger.info("Download successful, unzippping...")
         except:
             logger.exception("Download failed, please retry")
-            for f in glob.glob(self.home.joinpath("*.tmp")):
+            for f in glob.glob(os.path.join(os.getcwd(), "ml-20m.zip*.tmp")):
                 os.remove(f)
             return
 
-        zipfile_path = self.home.joinpath("ml-20.zip")
-        unzip_folder = self.home.joinpath("ml-20")
-
+        zipfile_path = self.home.joinpath("ml-20m.zip")
         with ZipFile(zipfile_path) as zipObj:
             zipObj.extractall(self.home)
 
-        shutil.move(unzip_folder.joinpath("*"), self.home)
-        os.rmdir(unzip_folder)
         logger.info("Finished, dataset location: %s", self.home)
 
-    def transform(self, rating_threshold) -> DataFrame:
+    def transform(self, rating_threshold) -> pd.DataFrame:
         """ Records with rating less than `rating_threshold` are dropped
         """
         df = pd.read_csv(

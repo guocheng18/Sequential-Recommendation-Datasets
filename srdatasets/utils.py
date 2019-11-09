@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from srdatasets.datasets import _dataset_corefiles
+from srdatasets.datasets import _dataset_classes
 
 __warehouse__ = Path(os.path.expanduser("~")).joinpath(".srdatasets")
 
@@ -24,7 +24,7 @@ def _get_downloaded_datasets():
     """ Simple check based on the existences of corefiles 
     """
     D = []
-    for d, filename in _dataset_corefiles.items():
-        if __warehouse__.joinpath(d, "raw", filename).exists():
+    for d, cla in _dataset_classes.items():
+        if __warehouse__.joinpath(d, "raw", cla().__corefile__).exists():
             D.append(d)
     return D

@@ -63,21 +63,24 @@ else:
     processed_datasets = _get_processed_datasets()
 
     if args.command == "download":
-        assert args.dataset in __datasets__, "Supported datasets: {}".format(
-            ", ".join(__datasets__)
-        )
-        assert args.dataset not in downloaded_datasets, "This dataset was downloaded!"
+        if args.dataset not in __datasets__:
+            raise ValueError("Supported datasets: {}".format(", ".join(__datasets__)))
+        if args.dataset in downloaded_datasets:
+            raise ValueError("{} has been downloaded".format(args.dataset))
         _download(args.dataset)
+
     elif args.command == "process":
-        assert args.dataset in downloaded_datasets, "This dataset wasn't downloaded!"
-        assert (
-            args.min_freq_user > args.target_len
-        ), "min_freq_user should be greater than target_len"
+        if args.dataset not in downloaded_datasets:
+            raise ValueError("{} has not been downloaded".format(args.dataset))
+        if args.min_freq_user > args.target_len:
+            raise ValueError("min_freq_user should be greater than target_len")
         _process(args)
+
     else:
         print(
-            "Downloaded datasets: {}\nProcessed datasets: {}".format(
-                ", ".join(downloaded_datasets), ", ".join(processed_datasets)
+            "Available datasets:\t{}\nDownloaded datasets:\t{}\nProcessed datasets:\t{}".format(
+                ", ".join(__datasets__),
+                ", ".join(downloaded_datasets),
+                ", ".join(processed_datasets),
             )
         )
-
