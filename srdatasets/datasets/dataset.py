@@ -9,7 +9,7 @@ class Dataset(object):
      (transforming raw data format to general data format)
     """
 
-    def __init__(self, home: Path = None):
+    def __init__(self, home: Path):
         """ `home` is local path of the raw dataset """
         self.home = home
 

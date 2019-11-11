@@ -1,6 +1,8 @@
 import argparse
 import logging
 
+from tabulate import tabulate
+
 from srdatasets.datasets import __datasets__
 from srdatasets.download import _download
 from srdatasets.process import _process
@@ -14,14 +16,14 @@ logging.basicConfig(
 
 parser = argparse.ArgumentParser("python -m srdatasets")
 subparsers = parser.add_subparsers(help="commands", dest="command")
-# commmand = info
+# info
 parser_i = subparsers.add_parser("info", help="print local datasets info")
 
-# commmand = download
+# download
 parser_d = subparsers.add_parser("download", help="download datasets")
 parser_d.add_argument("--dataset", type=str, required=True, help="dataset name")
 
-# commmand = process
+# process
 parser_g = subparsers.add_parser("process", help="process datasets")
 parser_g.add_argument("--dataset", type=str, required=True, help="dataset name")
 parser_g.add_argument(
@@ -45,13 +47,13 @@ parser_g.add_argument(
     "--rating-threshold",
     type=int,
     default=4,
-    help="[movielens-20m only] ratings great or equal than this are treated as valid",
+    help="[Amazon-X, Movielens-20M, Yelp] ratings great or equal than this are treated as valid",
 )
 parser_g.add_argument(
     "--item-type",
     type=str,
     default="song",
-    help="[lastfm-1k only] recommned artists or songs (artist | song)",
+    help="[Lastfm1K] recommned artists or songs (artist | song)",
 )
 args = parser.parse_args()
 
@@ -68,19 +70,19 @@ else:
         if args.dataset in downloaded_datasets:
             raise ValueError("{} has been downloaded".format(args.dataset))
         _download(args.dataset)
-
     elif args.command == "process":
         if args.dataset not in downloaded_datasets:
             raise ValueError("{} has not been downloaded".format(args.dataset))
         if args.min_freq_user > args.target_len:
             raise ValueError("min_freq_user should be greater than target_len")
         _process(args)
-
     else:
-        print(
-            "Available datasets:\t{}\nDownloaded datasets:\t{}\nProcessed datasets:\t{}".format(
-                ", ".join(__datasets__),
-                ", ".join(downloaded_datasets),
-                ", ".join(processed_datasets),
-            )
-        )
+        table = [
+            [
+                d,
+                "yes" if d in downloaded_datasets else "",
+                "yes" if d in processed_datasets else "",
+            ]
+            for d in __datasets__
+        ]
+        print(tabulate(table, headers=["name", "downloaded", "processed"]))

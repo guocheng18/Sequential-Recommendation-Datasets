@@ -3,20 +3,16 @@ This repo simplifies how sequential recommendation datasets are used.
 <p>
     <img src="https://img.shields.io/badge/pandas->=0.24-brightgreen?style=flat-square"/>
     <img src="https://img.shields.io/badge/python->=3.5-brightgreen?style=flat-square"/>
-    <img src="https://img.shields.io/badge/pypi-v0.0.1-brightgreen?style=flat-square"/>
 </p>
 
 ## Datasets
 Name | Item | Website
 ---- | ---- | -------
-Amazon-CDs | CD | http://jmcauley.ucsd.edu/data/amazon/
-Amazon-Electronics | Electronics | http://jmcauley.ucsd.edu/data/amazon/
-Book-Crossing | Book | http://www2.informatik.uni-freiburg.de/~cziegler/BX/
-FourSquare-NYC | Location | https://sites.google.com/site/yangdingqi/home/foursquare-dataset
-FourSquare-Tokyo | Location | https://sites.google.com/site/yangdingqi/home/foursquare-dataset
+Amazon-* | Books, Electronics, Movies, CDs, Clothing, Home, Kindle, Sports, Phones, Health, Toys, VideoGames, Tools, Beauty, Apps, Office, Pet, Automotive, Grocery, Patio, Baby, Music, MusicalInstruments, InstantVideo| http://jmcauley.ucsd.edu/data/amazon/
+FourSquare-* | NYC, Tokyo | https://sites.google.com/site/yangdingqi/home/foursquare-dataset
 Gowalla | Location | https://snap.stanford.edu/data/loc-Gowalla.html
-Last.fm-1K | Artist or Music | http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
-MovieLens-20M | Movie | https://grouplens.org/datasets/movielens/
+Lastfm1K | Artist or Music | http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
+MovieLens20M | Movie | https://grouplens.org/datasets/movielens/
 Yelp | Business | https://www.yelp.com/dataset
 
 ## Installation

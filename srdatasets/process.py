@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple
 
 from pandas import DataFrame, Series
 
-from srdatasets.datasets import _dataset_classes
+from srdatasets.datasets import dataset_classes
 from srdatasets.utils import __warehouse__
 
 # TODO add negative samples, timestamps etc
@@ -21,10 +21,17 @@ Dataset = List[Data]
 
 
 def _process(args: Namespace) -> None:
-    d = _dataset_classes[args.dataset](__warehouse__.joinpath(args.dataset, "raw"))
-    if args.dataset == "movielens-20m":
+    if "-" in args.dataset:
+        classname, sub = args.dataset.split("-")
+    else:
+        classname = args.dataset
+    d = dataset_classes[classname](__warehouse__.joinpath(args.dataset, "raw"))
+
+    if classname in ["Amazon", "MovieLens-20M", "Yelp"]:
         df = d.transform(args.rating_threshold)
-    elif args.dataset == "lastfm-1k":
+    elif classname == "FourSquare":
+        df = d.transform(sub)
+    elif classname == "Lastfm1K":
         df = d.transform(args.item_type)
     else:
         df = d.transform()

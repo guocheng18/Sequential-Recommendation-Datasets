@@ -1,13 +1,12 @@
-import glob
 import logging
 import os
 import tarfile
 from datetime import datetime
 
 import pandas as pd
-import wget
 
 from srdatasets.datasets.dataset import Dataset
+from srdatasets.datasets.utils import download_url
 
 logger = logging.getLogger(__name__)
 
@@ -20,19 +19,16 @@ class Lastfm1K(Dataset):
     )
 
     def download(self) -> None:
+        filepath = self.home.joinpath("lastfm-dataset-1K.tar.gz")
         try:
-            wget.download(self.__url__, out=self.home.as_posix())
+            download_url(self.__url__, filepath)
             logger.info("Download successful, unzipping...")
         except:
-            logger.exception("Download failed, please retry")
-            for f in glob.glob(
-                os.path.join(os.getcwd(), "lastfm-dataset-1K.tar.gz*.tmp")
-            ):
-                os.remove(f)
+            logger.exception("Download failed, please try again")
+            os.remove(filepath)
             return
 
-        zipfile_path = self.home.joinpath("lastfm-dataset-1K.tar.gz")
-        with tarfile.open(zipfile_path) as tar:
+        with tarfile.open(filepath) as tar:
             tar.extractall(self.home)
 
         logger.info("Finished, dataset location: %s", self.home)
@@ -51,7 +47,6 @@ class Lastfm1K(Dataset):
                 "song_id",
                 "song_name",
             ],
-            index_col=False,
             usecols=[0, 1, 2, 4],
             converters={
                 "timestamp": lambda x: int(
