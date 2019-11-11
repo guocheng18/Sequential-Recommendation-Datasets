@@ -1,9 +1,12 @@
+import json
 import logging
 import math
 import os
 import pickle
+import time
 from argparse import Namespace
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Dict, List, Tuple
 
 from pandas import DataFrame, Series
 
@@ -27,18 +30,30 @@ def _process(args: Namespace) -> None:
         classname = args.dataset
     d = dataset_classes[classname](__warehouse__.joinpath(args.dataset, "raw"))
 
+    config = {
+        "min_freq_user": args.min_freq_user,
+        "min_freq_item": args.min_freq_item,
+        "dev_ratio": args.dev_ratio,
+        "test_ratio": args.test_ratio,
+        "input_len": args.input_len,
+        "target_len": args.target_len,
+    }
+    
+    logger.info("Transforming...")
     if classname in ["Amazon", "MovieLens-20M", "Yelp"]:
         df = d.transform(args.rating_threshold)
+        config["rating_threshold"] = args.rating_threshold
     elif classname == "FourSquare":
         df = d.transform(sub)
     elif classname == "Lastfm1K":
         df = d.transform(args.item_type)
+        config["item_type"] = args.item_type
     else:
         df = d.transform()
-    _preprocess_and_save(df, args)
+    preprocess_and_save(df, args.dataset, config)
 
 
-def _preprocess_and_save(df: DataFrame, args: Namespace) -> None:
+def preprocess_and_save(df: DataFrame, dname: str, config: Dict) -> None:
     """General preprocessing method
     
     Args:
@@ -46,40 +61,42 @@ def _preprocess_and_save(df: DataFrame, args: Namespace) -> None:
         args (Namespace): arguments.
     """
     # Generate sequences
-    seqs = _generate_sequences(df, args.min_freq_item, args.min_freq_user)
-    if args.logstat:
-        log_sequences_info(seqs)
+    seqs = generate_sequences(df, config["min_freq_item"], config["min_freq_user"])
     # Create datasets
     logger.info("Splitting sequences into train/test...")
-    d_train, d_test = _split_sequences(seqs.to_dict(), args.target_len, args.test_ratio)
+    d_train, d_test = split_sequences(
+        seqs.to_dict(), config["target_len"], config["test_ratio"]
+    )
     logger.info("Splitting sequences into train-train/train-dev...")
-    d_train_dev, d_test_dev = _split_sequences(d_train, args.target_len, args.dev_ratio)
+    d_train_dev, d_test_dev = split_sequences(
+        d_train, config["target_len"], config["dev_ratio"]
+    )
     # Augment datasets
     logger.info("Augmenting train/test/train-train/train-dev...")
     d_train, d_test, d_train_dev, d_test_dev = [
-        _augment_dataset(d, args.input_len, args.target_len)
+        augment_dataset(d, config["input_len"], config["target_len"])
         for d in [d_train, d_test, d_train_dev, d_test_dev]
     ]
-    if args.logstat:
-        log_datasets_info(d_train, d_test, print_title="test")
-        log_datasets_info(d_train_dev, d_test_dev, print_title="dev")
     # Dump to files
     logger.info("Dumping...")
-    dump(d_train, d_test, args.dataset, dev=False)
-    dump(d_train_dev, d_test_dev, args.dataset, dev=True)
+    processed_path = __warehouse__.joinpath(
+        dname, "processed", "c" + str(int(time.time() * 1000))
+    )
+    dump(processed_path, d_train, d_test, "test")
+    dump(processed_path, d_train_dev, d_test_dev, "dev")
+    with open(processed_path.joinpath("config.json"), "w") as f:
+        json.dump(config, f)
     logger.info("OK")
 
 
-def _generate_sequences(
-    df: DataFrame, min_freq_item: int, min_freq_user: int
-) -> Series:
+def generate_sequences(df: DataFrame, min_freq_item: int, min_freq_user: int) -> Series:
     """When renumbering items, 0 is kept for padding sequences
     """
     logger.warning("Dropping items (freq < {})...".format(min_freq_item))
-    df = _drop_infrequent_items(df, min_freq_item)
+    df = drop_infrequent_items(df, min_freq_item)
 
     logger.warning("Dropping users (freq < {})...".format(min_freq_user))
-    df = _drop_infrequent_users(df, min_freq_user)
+    df = drop_infrequent_users(df, min_freq_user)
 
     logger.info("Remapping item ids...")
     item_mapper = dict(
@@ -93,7 +110,7 @@ def _generate_sequences(
     return seqs
 
 
-def _split_sequences(
+def split_sequences(
     seqs: SequenceMap, target_len: int, test_ratio: float
 ) -> Tuple[SequenceMap, SequenceMap]:
     """Split sequences into train/test subsequences
@@ -122,15 +139,15 @@ def _split_sequences(
     return train_seqmap, test_seqmap
 
 
-def _augment_dataset(dataset: SequenceMap, input_len: int, target_len: int) -> Dataset:
+def augment_dataset(dataset: SequenceMap, input_len: int, target_len: int) -> Dataset:
     augmented_dataset = []
     for user_id, seq in dataset.items():
-        augmented_seqs = _augment_sequence(seq, user_id, input_len, target_len)
+        augmented_seqs = augment_sequence(seq, user_id, input_len, target_len)
         augmented_dataset.extend(augmented_seqs)
     return augmented_dataset
 
 
-def _augment_sequence(
+def augment_sequence(
     seq: Sequence, user_id: int, input_len: int, target_len: int
 ) -> List[Data]:
     """ `seq` is assumed to be longer than `target_len`, 
@@ -152,50 +169,33 @@ def _augment_sequence(
     return datalist
 
 
-def _drop_infrequent_users(df: DataFrame, min_freq: int) -> DataFrame:
+def drop_infrequent_users(df: DataFrame, min_freq: int) -> DataFrame:
     counts = df.user_id.value_counts()
     df = df[df.user_id.isin(counts[counts.ge(min_freq)].index)]
     return df
 
 
-def _drop_infrequent_items(df: DataFrame, min_freq: int) -> DataFrame:
+def drop_infrequent_items(df: DataFrame, min_freq: int) -> DataFrame:
     counts = df.item_id.value_counts()
     df = df[df.item_id.isin(counts[counts.ge(min_freq)].index)]
     return df
 
 
-def dump(d_train: Dataset, d_test: Dataset, dname: str, dev: float = False) -> None:
+def dump(path: Path, d_train: Dataset, d_test: Dataset, mode: str) -> None:
     """ Save preprocessed datasets """
-    dump_path = os.path.join(
-        __warehouse__, dname, "processed", "dev" if dev else "test"
-    )
-    os.makedirs(dump_path, exist_ok=True)
-    with open(os.path.join(dump_path, "train.pkl"), "wb") as f:
+    os.makedirs(path.joinpath(mode))
+    with open(path.joinpath(mode, "train.pkl"), "wb") as f:
         pickle.dump(d_train, f)
-    with open(os.path.join(dump_path, "test.pkl"), "wb") as f:
+    with open(path.joinpath(mode, "test.pkl"), "wb") as f:
         pickle.dump(d_test, f)
-
-
-def log_sequences_info(seqs: Series):
-    lens = seqs.apply(len)
-    logger.info(
-        "\n{}> sequences info\ncount\tmin\tmax\tmean\n{}\t{}\t{}\t{}\n".format(
-            "=" * 10, seqs.count(), lens.min(), lens.max(), lens.mean()
-        )
-    )
-
-
-def log_datasets_info(
-    d_train: Dataset, d_test: Dataset, print_title: Optional[str] = None
-):
+    # write statistics
     users = set()
     items = set()
+    interactions = 0
     for user_id, inputs, targets in d_train:
         users.add(user_id)
-        items.update(inputs)
-        items.update(targets)
-    logger.info(
-        "\n{}> {}\ntotal_users\ttotal_items\ttrain_size\ttest_size\n{}\t{}\t{}\t{}\n".format(
-            "=" * 10, print_title, len(users), len(items), len(d_train), len(d_test)
-        )
-    )
+        items.update(inputs + targets)
+        interactions += len(inputs)
+    stats = {"users": len(users), "items": len(items), "interactions": interactions}
+    with open(path.joinpath(mode, "stats.json"), "w") as f:
+        json.dump(stats, f)

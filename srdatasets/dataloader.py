@@ -3,12 +3,12 @@ import os
 import pickle
 import random
 
-from srdatasets.utils import __warehouse__, _get_processed_datasets
+from srdatasets.utils import __warehouse__, get_processed_datasets
 
 
 class DataLoader:
 
-    __datasets__ = _get_processed_datasets()
+    __datasets__ = get_processed_datasets()
 
     def __init__(
         self,

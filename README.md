@@ -73,7 +73,7 @@ for epoch in range(10):
 - [ ] Enable loading datasets with different processing setttings
 - [ ] Add negative sampling
 - [ ] Add timestamp feature to dataset
-- [ ] Store dataset statistics to local
+- [x] Store dataset statistics to local
 - [ ] Support Custom datasets
 
 
