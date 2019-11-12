@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 
 from pandas.io.json import json_normalize
 from tabulate import tabulate
@@ -86,6 +87,14 @@ else:
             raise ValueError("{} has not been downloaded".format(args.dataset))
         if args.min_freq_user <= args.target_len:
             raise ValueError("min_freq_user should be greater than target_len")
+        if args.dataset in processed_datasets:
+            for c in processed_datasets[args.dataset]:
+                config = read_json(
+                    __warehouse__.joinpath(args.dataset, "processed", c, "config.json")
+                )
+                if all([args.__dict__[k] == v for k, v in config.items()]):
+                    print("You have run this config, the config id is: {}".format(c))
+                    sys.exit(1)
         _process(args)
     else:
         if args.dataset is None:
@@ -107,9 +116,7 @@ else:
                 print("{} has not been downloaded".format(args.dataset))
             else:
                 if args.dataset not in processed_datasets:
-                    print(
-                        "{} has not been processed".format(args.dataset)
-                    )
+                    print("{} has not been processed".format(args.dataset))
                 else:
                     print("Configs")
                     configs = json_normalize(
