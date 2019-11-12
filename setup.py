@@ -14,7 +14,12 @@ setuptools.setup(
     url="https://github.com/guocheng2018/sequential-recommendation-datasets",
     packages=["srdatasets"],
     python_requires=">=3.5",
-    install_requires=["pandas>=0.25.0", "tqdm>=4.32.2", "tabulate>=0.8.5"],
+    install_requires=[
+        "pandas>=0.25.0",
+        "tqdm>=4.32.2",
+        "tabulate>=0.8.5",
+        "numpy>=1.16.4",
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

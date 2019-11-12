@@ -18,7 +18,7 @@ class Gowalla(Dataset):
     __corefile__ = "loc-gowalla_totalCheckins.txt"
 
     def download(self) -> None:
-        filepath = self.home.joinpath("/loc-gowalla_totalCheckins.txt.gz")
+        filepath = self.home.joinpath("loc-gowalla_totalCheckins.txt.gz")
         try:
             download_url(self.__url__, filepath)
             logger.info("Download successful, unzipping...")

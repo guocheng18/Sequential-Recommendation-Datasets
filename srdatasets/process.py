@@ -207,3 +207,6 @@ def dump(path: Path, train_data: Dataset, test_data: Dataset, mode: str) -> None
     stats = {"users": len(users), "items": len(items), "interactions": interactions}
     with open(path.joinpath(mode, "stats.json"), "w") as f:
         json.dump(stats, f)
+
+
+# ====== API for custom dataset ====== #

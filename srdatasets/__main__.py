@@ -1,6 +1,8 @@
 import argparse
 import logging
+import os
 import sys
+import unicodedata
 
 from pandas.io.json import json_normalize
 from tabulate import tabulate
@@ -14,6 +16,8 @@ from srdatasets.utils import (
     get_processed_datasets,
     read_json,
 )
+
+os.environ["PYTHONIOENCODING"] = "utf-8"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -104,12 +108,20 @@ else:
             table = [
                 [
                     d,
-                    "yes" if d in downloaded_datasets else "",
-                    ", ".join(processed_datasets.get(d, [])),
+                    unicodedata.lookup("Heavy Check Mark")
+                    if d in downloaded_datasets
+                    else "",
+                    len(processed_datasets[d]) if d in processed_datasets else "",
                 ]
                 for d in __datasets__
             ]
-            print(tabulate(table, headers=["name", "downloaded", "processed configs"]))
+            print(
+                tabulate(
+                    table,
+                    headers=["name", "downloaded", "processed configs"],
+                    tablefmt="psql",
+                )
+            )
         else:
             if args.dataset not in __datasets__:
                 raise ValueError(
@@ -132,8 +144,12 @@ else:
                             for c in processed_datasets[args.dataset]
                         ]
                     )
-                    configs.insert(0, "id", processed_datasets[args.dataset])
-                    print(tabulate(configs, headers="keys", showindex=False))
+                    configs.insert(0, "config id", processed_datasets[args.dataset])
+                    print(
+                        tabulate(
+                            configs, headers="keys", showindex=False, tablefmt="psql"
+                        )
+                    )
                     print("\nStats")
                     stats = json_normalize(
                         [
@@ -151,5 +167,9 @@ else:
                     ids = []
                     for c in processed_datasets[args.dataset]:
                         ids.extend([c, ""])
-                    stats.insert(0, "id", ids)
-                    print(tabulate(stats, headers="keys", showindex=False))
+                    stats.insert(0, "config id", ids)
+                    print(
+                        tabulate(
+                            stats, headers="keys", showindex=False, tablefmt="psql"
+                        )
+                    )

@@ -3,6 +3,8 @@ import os
 import pickle
 import random
 
+import numpy as np
+
 from srdatasets.datasets import __datasets__
 from srdatasets.utils import __warehouse__, get_processed_datasets
 
@@ -17,7 +19,7 @@ class DataLoader:
         config_id: str,
         batch_size: int = 1,
         train: bool = True,
-        development: bool = True,
+        development: bool = False,
     ):
         """Loader of sequential recommendation datasets
 
@@ -100,4 +102,4 @@ class DataLoader:
                 * self.batch_size
             ]
             self._batch_index += 1
-            return list(zip(*batch))
+            return [np.array(b) for b in zip(*batch)]
