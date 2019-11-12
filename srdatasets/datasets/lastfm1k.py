@@ -25,7 +25,8 @@ class Lastfm1K(Dataset):
             logger.info("Download successful, unzipping...")
         except:
             logger.exception("Download failed, please try again")
-            os.remove(filepath)
+            if filepath.exists():
+                os.remove(filepath)
             return
 
         with tarfile.open(filepath) as tar:

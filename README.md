@@ -1,19 +1,22 @@
 # Sequential Recommendation Datasets
 This repo simplifies how sequential recommendation datasets are used.
 <p>
-    <img src="https://img.shields.io/badge/pandas->=0.24-brightgreen?style=flat-square"/>
-    <img src="https://img.shields.io/badge/python->=3.5-brightgreen?style=flat-square"/>
+    <img src="https://img.shields.io/badge/pypi package-v0.0.1-brightgreen?style=flat-square"/>
 </p>
 
 ## Datasets
 Name | Item | Website
 ---- | ---- | -------
-Amazon-* | Books, Electronics, Movies, CDs, Clothing, Home, Kindle, Sports, Phones, Health, Toys, VideoGames, Tools, Beauty, Apps, Office, Pet, Automotive, Grocery, Patio, Baby, Music, MusicalInstruments, InstantVideo| http://jmcauley.ucsd.edu/data/amazon/
-FourSquare-* | NYC, Tokyo | https://sites.google.com/site/yangdingqi/home/foursquare-dataset
+Amazon-[category] | Product| http://jmcauley.ucsd.edu/data/amazon/
+FourSquare-[city] | Location| https://sites.google.com/site/yangdingqi/home/foursquare-dataset
 Gowalla | Location | https://snap.stanford.edu/data/loc-Gowalla.html
 Lastfm1K | Artist or Music | http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
 MovieLens20M | Movie | https://grouplens.org/datasets/movielens/
 Yelp | Business | https://www.yelp.com/dataset
+
+### NOTE
+- Amazon categories: Books, Electronics, Movies, CDs, Clothing, Home, Kindle, Sports, Phones, Health, Toys, VideoGames, Tools, Beauty, Apps, Office, Pet, Automotive, Grocery, Patio, Baby, Music, MusicalInstruments, InstantVideo
+- FourSquare cities: NYC, Tokyo
 
 ## Installation
 Install from pypi:
@@ -70,11 +73,11 @@ for epoch in range(10):
 ```
 
 ## TODO
-- [x] Enable loading datasets with different processing setttings
 - [ ] Add negative sampling
 - [ ] Add timestamp feature to dataset
-- [x] Store dataset statistics to local
 - [ ] Support Custom datasets
+- [ ] Add time-based dataset splitting
+- [ ] More datasets
 
 
 ## Disclaimers

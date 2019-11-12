@@ -27,7 +27,8 @@ class FourSquare(Dataset):
             logger.info("Download successful, unzipping...")
         except:
             logger.exception("Download failed, please try again")
-            os.remove(filepath)
+            if filepath.exists():
+                os.remove(filepath)
             return
 
         with ZipFile(filepath) as zipObj:

@@ -23,7 +23,8 @@ class MovieLens20M(Dataset):
             logger.info("Download successful, unzippping...")
         except:
             logger.exception("Download failed, please retry")
-            os.remove(filepath)
+            if filepath.exists():
+                os.remove(filepath)
             return
 
         with ZipFile(filepath) as zipObj:

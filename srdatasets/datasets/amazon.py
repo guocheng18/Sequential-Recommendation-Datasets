@@ -44,11 +44,12 @@ class Amazon(Dataset):
     def download(self, category) -> None:
         filepath = self.home.joinpath(self.__corefile__[category])
         try:
-            download_url(self.url_prefix + category, filepath)
+            download_url(self.url_prefix + self.__corefile__[category], filepath)
             logger.info("Finished, dataset location: %s", self.home)
         except:
             logger.exception("Download failed, please try again")
-            os.remove(filepath)
+            if filepath.exists():
+                os.remove(filepath)
 
     def transform(self, category, rating_threshold) -> pd.DataFrame:
         """ Records with rating less than `rating_threshold` are dropped
