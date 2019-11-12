@@ -55,10 +55,13 @@ parser_g.add_argument(
     "--target-len", type=int, default=3, help="target sequence length"
 )
 parser_g.add_argument(
+    "--no-augment", action="store_true", help="Do not use data augmentation"
+)
+parser_g.add_argument(
     "--rating-threshold",
     type=int,
     default=4,
-    help="[Amazon-X, Movielens-20M, Yelp] ratings great or equal than this are treated as valid",
+    help="[Amazon-X, Movielens20M, Yelp] ratings great or equal than this are treated as valid",
 )
 parser_g.add_argument(
     "--item-type",
