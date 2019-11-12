@@ -3,16 +3,18 @@ import os
 import pickle
 import random
 
+from srdatasets.datasets import __datasets__
 from srdatasets.utils import __warehouse__, get_processed_datasets
 
 
 class DataLoader:
 
-    __datasets__ = get_processed_datasets()
+    _processed_datasets = get_processed_datasets()
 
     def __init__(
         self,
         dataset_name: str,
+        config_id: str,
         batch_size: int = 1,
         train: bool = True,
         development: bool = True,
@@ -21,25 +23,41 @@ class DataLoader:
 
         Args:
             dataset_name (str): dataset name.
+            config_id (str): dataset config id
             batch_size (int): batch_size.
             train (bool, optional): load training data or test data. Defaults to True.
             development (bool, optional): use the dataset for hyperparameter searching. Defaults to True.
         
         Note: training data is shuffled automatically.
         """
-
-        if dataset_name not in self.__datasets__:
+        if dataset_name not in __datasets__:
             raise ValueError(
-                "Dataset not found! Existing datasets: {}".format(
-                    "none"
-                    if len(self.__datasets__) == 0
-                    else ", ".join(self.__datasets__)
+                "{} is not supported, currently supported datasets: {}".format(
+                    dataset_name, ", ".join(__datasets__)
+                )
+            )
+
+        if dataset_name not in self._processed_datasets:
+            raise ValueError(
+                "{} is not processed, currently processed datasets: {}".format(
+                    dataset_name,
+                    ", ".join(self._processed_datasets)
+                    if self._processed_datasets
+                    else "none",
+                )
+            )
+
+        if config_id not in self._processed_datasets[dataset_name]:
+            raise ValueError(
+                "Unrecognized config id, existing config ids: {}".format(
+                    ", ".join(self._processed_datasets[dataset_name])
                 )
             )
 
         dataset_path = __warehouse__.joinpath(
             dataset_name,
             "processed",
+            config_id,
             "dev" if development else "test",
             "train.pkl" if train else "test.pkl",
         )

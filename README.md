@@ -70,7 +70,7 @@ for epoch in range(10):
 ```
 
 ## TODO
-- [ ] Enable loading datasets with different processing setttings
+- [x] Enable loading datasets with different processing setttings
 - [ ] Add negative sampling
 - [ ] Add timestamp feature to dataset
 - [x] Store dataset statistics to local
