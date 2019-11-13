@@ -1,12 +1,16 @@
+import logging
 import math
 import os
 import pickle
 import random
+from collections import Counter
 
 import numpy as np
 
 from srdatasets.datasets import __datasets__
 from srdatasets.utils import __warehouse__, get_processed_datasets
+
+logger = logging.getLogger(__name__)
 
 
 class DataLoader:
@@ -20,15 +24,21 @@ class DataLoader:
         batch_size: int = 1,
         train: bool = True,
         development: bool = False,
+        negatives_per_target: int = 0,
+        include_timestamp: bool = False,
+        drop_last: bool = False,
     ):
         """Loader of sequential recommendation datasets
 
         Args:
             dataset_name (str): dataset name.
             config_id (str): dataset config id
-            batch_size (int): batch_size.
-            train (bool, optional): load training data or test data. Defaults to True.
-            development (bool, optional): use the dataset for hyperparameter searching. Defaults to True.
+            batch_size (int): batch_size
+            train (bool, optional): load training data
+            development (bool, optional): use the dataset for hyperparameter tuning
+            negatives_per_target (int, optional): number of negative samples per target
+            include_timestamp (bool, optional): add timestamps to batch data
+            drop_last (bool, optional): drop last incomplete batch
         
         Note: training data is shuffled automatically.
         """
@@ -56,6 +66,17 @@ class DataLoader:
                 )
             )
 
+        if negatives_per_target < 0:
+            negatives_per_target = 0
+            logger.warning(
+                "Number of negative samples per target should >= 0, reset to 0"
+            )
+
+        if not train and negatives_per_target > 0:
+            logger.warning(
+                "Negative samples are used for training, set negatives_per_target has no effect when testing"
+            )
+
         dataset_path = __warehouse__.joinpath(
             dataset_name,
             "processed",
@@ -66,14 +87,22 @@ class DataLoader:
         with open(dataset_path, "rb") as f:
             self.dataset = pickle.load(f)  # list
 
+        if train:
+            counter = Counter()
+            for _, input_items, target_items in self.dataset:
+                counter.update(input_items + target_items)
+            self.item_counts = np.array([counter[i] for i in range(len(counter))])
+
         if batch_size <= 0:
-            raise ValueError("batch_size should be at least 1")
+            raise ValueError("batch_size should >= 1")
         if batch_size > len(self.dataset):
             raise ValueError("batch_size exceeds the dataset size")
 
         self.batch_size = batch_size
         self.train = train
-        self._batch_index = 0
+        self.include_timestamp = include_timestamp
+        self.negatives_per_target = negatives_per_target
+        self._batch_idx = 0
 
     def __iter__(self):
         return self
@@ -81,7 +110,29 @@ class DataLoader:
     def __len__(self):
         """Number of batches
         """
-        return math.ceil(len(self.dataset) / self.batch_size)
+        if self.drop_last:
+            return math.floor(len(self.dataset) / self.batch_size)
+        else:
+            return math.ceil(len(self.dataset) / self.batch_size)
+
+    def sample_negatives(self, input_items, target_items):
+        negatives = []
+        for b in np.concatenate((input_items, target_items), 1):
+            item_counts = self.item_counts  # deepcopy ?
+            item_counts[b] = 0
+            item_counts[0] = 0
+            probs = item_counts / item_counts.sum()
+            _negatives = np.random.choice(
+                len(item_counts),
+                size=self.negatives_per_target * target_items.shape[1],
+                replace=False,
+                p=probs,
+            )
+            _negatives = _negatives.reshape(
+                (target_items.shape[1], self.negatives_per_target)
+            )
+            negatives.append(_negatives)
+        return np.stack(negatives)
 
     def __next__(self):
         """
@@ -90,16 +141,23 @@ class DataLoader:
             input sequences: (batch_size, input_len)
             target sequences: (batch_size, target_len)
         """
-        if self._batch_index == len(self):
-            self._batch_index = 0
+        if self._batch_idx == len(self):
+            self._batch_idx = 0
             raise StopIteration
         else:
-            if self._batch_index == 0 and self.train:
+            if self._batch_idx == 0 and self.train:
                 random.shuffle(self.dataset)
             batch = self.dataset[
-                self._batch_index
-                * self.batch_size : (self._batch_index + 1)
+                self._batch_idx
+                * self.batch_size : (self._batch_idx + 1)
                 * self.batch_size
             ]
-            self._batch_index += 1
-            return [np.array(b) for b in zip(*batch)]
+            self._batch_idx += 1
+            batch_data = [np.array(b) for b in zip(*batch)]
+            if not self.include_timestamp:
+                batch_data = batch_data[:3]
+            # Sampling negatives
+            if train and self.negatives_per_target > 0:
+                negatives = self.sample_negatives(batch_data[1], batch_data[2])
+                batch_data.append(negatives)
+            return batch_data
