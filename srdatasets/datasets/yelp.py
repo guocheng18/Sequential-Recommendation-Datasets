@@ -34,7 +34,6 @@ class Yelp(Dataset):
         df["date"] = df["date"].map(
             lambda x: int(datetime.strptime(x, "%Y-%m-%d").timestamp())
         )
-        df = df[df["stars"] >= stars_threshold]
-        df = df.drop("stars")
+        df = df[df["stars"] >= stars_threshold].drop("stars", axis=1)
         df = df.rename(columns={"business_id": "item_id", "date": "timestamp"})
         return df

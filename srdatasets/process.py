@@ -11,6 +11,8 @@ from tqdm import tqdm
 from srdatasets.datasets import dataset_classes
 from srdatasets.utils import __warehouse__
 
+tqdm.pandas()
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,16 +32,20 @@ def _process(args):
         "target_len": args.target_len,
         "no_augment": args.no_augment,
     }
+    if classname in ["Amazon", "MovieLens20M", "Yelp"]:
+        config["rating_threshold"] = args.rating_threshold
+    elif classname == "Lastfm1K":
+        config["item_type"] = args.item_type
 
     logger.info("Transforming...")
-    if classname in ["Amazon", "MovieLens-20M", "Yelp"]:
+    if classname == "Amazon":
+        df = d.transform(sub, args.rating_threshold)
+    elif classname in ["MovieLens20M", "Yelp"]:
         df = d.transform(args.rating_threshold)
-        config["rating_threshold"] = args.rating_threshold
     elif classname == "FourSquare":
         df = d.transform(sub)
     elif classname == "Lastfm1K":
         df = d.transform(args.item_type)
-        config["item_type"] = args.item_type
     else:
         df = d.transform()
     preprocess_and_save(df, args.dataset, config)
@@ -60,7 +66,7 @@ def preprocess_and_save(df, dname, config):
     train_seqs, test_seqs = split_sequences(
         seqs.to_dict(), config["target_len"], config["test_ratio"]
     )
-    logger.info("Splitting train sequences into dev-train/dev-test...")
+    logger.info("Splitting train into dev-train/dev-test...")
     dev_train_seqs, dev_test_seqs = split_sequences(
         train_seqs, config["target_len"], config["dev_ratio"]
     )
@@ -123,7 +129,11 @@ def generate_sequences(df, min_freq_item, min_freq_user):
     logger.info("Grouping items by user...")
     df = df.sort_values("timestamp")
     df["item_and_time"] = list(zip(df["item_id"], df["timestamp"]))
-    seqs = df.groupby("user_id")["item_and_time"].apply(list).reset_index(drop=True)
+    seqs = (
+        df.groupby("user_id")["item_and_time"]
+        .progress_apply(list)
+        .reset_index(drop=True)
+    )
     return seqs
 
 
@@ -151,7 +161,7 @@ def split_sequences(user_seq, target_len, test_ratio):
             for item_id, _ in train_seqmap[user_id]:
                 items.add(item_id)
     # Clear new items
-    for user_id, seq in tqdm(list(test_seqmap.items())):
+    for user_id, seq in list(test_seqmap.items()):
         seq_ = [(i, t) for i, t in seq if i in items]
         if len(seq_) > target_len:
             test_seqmap[user_id] = seq_

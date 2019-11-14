@@ -16,7 +16,7 @@ setuptools.setup(
     python_requires=">=3.5",
     install_requires=[
         "pandas>=0.25.0",
-        "tqdm>=4.32.2",
+        "tqdm>=4.33.0",
         "tabulate>=0.8.5",
         "numpy>=1.16.4",
     ],

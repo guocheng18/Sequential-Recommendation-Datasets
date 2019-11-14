@@ -9,8 +9,12 @@ from tabulate import tabulate
 from srdatasets.datasets import __datasets__
 from srdatasets.download import _download
 from srdatasets.process import _process
-from srdatasets.utils import (__warehouse__, get_downloaded_datasets,
-                              get_processed_datasets, read_json)
+from srdatasets.utils import (
+    __warehouse__,
+    get_downloaded_datasets,
+    get_processed_datasets,
+    read_json,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,6 +72,15 @@ parser_g.add_argument(
     help="[Lastfm1K] set item to song or artist",
 )
 args = parser.parse_args()
+
+# Support dataset name case insensitive
+_datasets_lowercase = {d.lower(): d for d in __datasets__}
+if (
+    "dataset" in args
+    and args.dataset is not None
+    and args.dataset.lower() in _datasets_lowercase
+):
+    args.__dict__["dataset"] = _datasets_lowercase[args.dataset.lower()]
 
 
 if args.command is None:

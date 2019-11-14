@@ -59,5 +59,5 @@ class Amazon(Dataset):
             header=None,
             names=["user_id", "item_id", "rating", "timestamp"],
         )
-        df = df[df.rating >= rating_threshold].drop("rating")
+        df = df[df.rating >= rating_threshold].drop("rating", axis=1)
         return df

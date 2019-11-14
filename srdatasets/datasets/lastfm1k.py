@@ -34,7 +34,7 @@ class Lastfm1K(Dataset):
 
         logger.info("Finished, dataset location: %s", self.home)
 
-    def transform(self, item_type="song") -> pd.DataFrame:
+    def transform(self, item_type) -> pd.DataFrame:
         """ item_type can be `artist` or `song`
         """
         df = pd.read_csv(
@@ -56,7 +56,7 @@ class Lastfm1K(Dataset):
             },
         )
         if item_type == "song":
-            df = df.drop("artist_id").rename(columns={"song_id": "item_id"})
+            df = df.drop("artist_id", axis=1).rename(columns={"song_id": "item_id"})
         else:
-            df = df.drop("song_id").rename(columns={"artist_id": "item_id"})
+            df = df.drop("song_id", axis=1).rename(columns={"artist_id": "item_id"})
         return df

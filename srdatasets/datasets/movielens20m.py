@@ -41,6 +41,5 @@ class MovieLens20M(Dataset):
             names=["user_id", "movie_id", "rating", "timestamp"],
         )
         df = df.rename(columns={"movie_id": "item_id"})
-        df = df[df.rating >= rating_threshold]
-        df = df.drop("rating")
+        df = df[df.rating >= rating_threshold].drop("rating", axis=1)
         return df
