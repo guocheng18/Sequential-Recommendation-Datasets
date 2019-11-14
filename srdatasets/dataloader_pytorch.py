@@ -28,7 +28,7 @@ class Dataset(torch.utils.data.Dataset):
             raise ValueError("{} does not exist!".format(datapath))
         if train:
             self.item_counts = Counter()
-            for _, input_items, target_items in self.dataset:
+            for _, input_items, target_items, _, _ in self.dataset:
                 self.item_counts.update(input_items + target_items)
 
     def __len__(self):
@@ -96,14 +96,14 @@ class DataLoader(torch.utils.data.DataLoader):
         """
         if dataset_name not in __datasets__:
             raise ValueError(
-                "{} is not supported, currently supported datasets: {}".format(
-                    dataset_name, ", ".join(__datasets__)
+                "Unrecognized dataset, currently supported datasets: {}".format(
+                    ", ".join(__datasets__)
                 )
             )
 
         if dataset_name not in self._processed_datasets:
             raise ValueError(
-                "{} is not processed, currently processed datasets: {}".format(
+                "{} has not been processed, currently processed datasets: {}".format(
                     dataset_name,
                     ", ".join(self._processed_datasets)
                     if self._processed_datasets
@@ -137,7 +137,7 @@ class DataLoader(torch.utils.data.DataLoader):
         if train:
             self.item_counts = torch.tensor(
                 [_dataset.item_counts[i] for i in range(len(_dataset.item_counts))],
-                dtype=torch.long,
+                dtype=torch.float,
             )
 
         super(DataLoader, self).__init__(

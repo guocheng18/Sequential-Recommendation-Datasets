@@ -4,26 +4,17 @@ import math
 import os
 import pickle
 import time
-from argparse import Namespace
 from pathlib import Path
-from typing import Dict, List, Tuple
 
-from pandas import DataFrame, Series
+from tqdm import tqdm
 
 from srdatasets.datasets import dataset_classes
 from srdatasets.utils import __warehouse__
 
-# TODO add negative samples, timestamps etc
-
 logger = logging.getLogger(__name__)
 
-Sequence = List[int]
-UserSequence = Dict[int, Sequence]
-Data = Tuple[int, Sequence, Sequence]
-Dataset = List[Data]
 
-
-def _process(args: Namespace) -> None:
+def _process(args):
     if "-" in args.dataset:
         classname, sub = args.dataset.split("-")
     else:
@@ -54,7 +45,7 @@ def _process(args: Namespace) -> None:
     preprocess_and_save(df, args.dataset, config)
 
 
-def preprocess_and_save(df: DataFrame, dname: str, config: Dict) -> None:
+def preprocess_and_save(df, dname, config):
     """General preprocessing method
     
     Args:
@@ -62,9 +53,10 @@ def preprocess_and_save(df: DataFrame, dname: str, config: Dict) -> None:
         args (Namespace): arguments.
     """
     # Generate sequences
+    logger.info("Generating user sequences...")
     seqs = generate_sequences(df, config["min_freq_item"], config["min_freq_user"])
     # Split sequences
-    logger.info("Splitting sequences into train/test...")
+    logger.info("Splitting user sequences into train/test...")
     train_seqs, test_seqs = split_sequences(
         seqs.to_dict(), config["target_len"], config["test_ratio"]
     )
@@ -80,6 +72,10 @@ def preprocess_and_save(df: DataFrame, dname: str, config: Dict) -> None:
         )
         for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
     ]
+    # Reassign user_ids and item_ids
+    logger.info("Reassigning ids...")
+    train_data, test_data = reassign_ids(train_data, test_data)
+    dev_train_data, dev_test_data = reassign_ids(dev_train_data, dev_test_data)
     # Dump to disk
     logger.info("Dumping...")
     processed_path = __warehouse__.joinpath(
@@ -92,104 +88,134 @@ def preprocess_and_save(df: DataFrame, dname: str, config: Dict) -> None:
     logger.info("OK")
 
 
-def generate_sequences(df: DataFrame, min_freq_item: int, min_freq_user: int) -> Series:
-    """When renumbering items, 0 is kept for padding sequences
-    """
+def reassign_ids(train_data, test_data):
+    train_data_ = []
+    test_data_ = []
+    user_to_idx = {}
+    item_to_idx = {-1: 0}
+    # Train collect
+    for user, input_i, target_i, input_t, target_t in tqdm(train_data):
+        if user not in user_to_idx:
+            user_to_idx[user] = len(user_to_idx)
+        user_ = user_to_idx[user]
+        for i in input_i + target_i:
+            if i not in item_to_idx:
+                item_to_idx[i] = len(item_to_idx)
+        input_i_ = [item_to_idx[i] for i in input_i]
+        target_i_ = [item_to_idx[i] for i in target_i]
+        train_data_.append((user_, input_i_, target_i_, input_t, target_t))
+    # Test apply
+    for user, input_i, target_i, input_t, target_t in tqdm(test_data):
+        user_ = user_to_idx[user]
+        input_i_ = [item_to_idx[i] for i in input_i]
+        target_i_ = [item_to_idx[i] for i in target_i]
+        test_data_.append((user_, input_i_, target_i_, input_t, target_t))
+    return train_data_, test_data_
+
+
+def generate_sequences(df, min_freq_item, min_freq_user):
     logger.warning("Dropping items (freq < {})...".format(min_freq_item))
-    df = drop_infrequent_items(df, min_freq_item)
+    df = drop_items(df, min_freq_item)
 
     logger.warning("Dropping users (freq < {})...".format(min_freq_user))
-    df = drop_infrequent_users(df, min_freq_user)
+    df = drop_users(df, min_freq_user)
 
-    logger.info("Remapping item ids...")
-    item_mapper = dict(
-        zip(df["item_id"].unique(), range(1, df["item_id"].nunique() + 1))
-    )
-    df["item_id"] = df["item_id"].map(item_mapper)
-
-    logger.info("Generating all users' sequences...")
+    logger.info("Grouping items by user...")
     df = df.sort_values("timestamp")
-    seqs = df.groupby("user_id")["item_id"].apply(list).reset_index(drop=True)
+    df["item_and_time"] = list(zip(df["item_id"], df["timestamp"]))
+    seqs = df.groupby("user_id")["item_and_time"].apply(list).reset_index(drop=True)
     return seqs
 
 
-def split_sequences(
-    user_seq: UserSequence, target_len: int, test_ratio: float
-) -> Tuple[UserSequence, UserSequence]:
+def split_sequences(user_seq, target_len, test_ratio):
     """Split user sequences into train/test subsequences
     """
     train_seqmap = {}
     test_seqmap = {}
-    itemset = set()
-    for user_id, seq in user_seq.items():
+    items = set()
+    for user_id, seq in tqdm(user_seq.items()):
         train_len = math.floor(len(seq) * (1 - test_ratio))
+        test_len = len(seq) - train_len
+        # Split
         if train_len > target_len:
-            train_seqmap[user_id] = seq[:train_len]
-            itemset.update(seq[:train_len])
+            if test_len > target_len:
+                train_seqmap[user_id] = seq[:train_len]
+                test_seqmap[user_id] = seq[train_len:]
+            else:
+                train_seqmap[user_id] = seq
         else:
-            pass  # drop
-        if len(seq) - train_len > target_len:
-            test_seqmap[user_id] = seq[train_len:]
-        else:
-            pass  # drop
-    for user_id, seq in list(test_seqmap.items()):
-        # Filter out items that not in trainset
-        seq_new = [i for i in seq if i in itemset]
-        if len(seq_new) > target_len:
-            test_seqmap[user_id] = seq_new
+            if len(seq) > target_len:
+                train_seqmap[user_id] = seq
+        # Count items
+        if user_id in train_seqmap:
+            for item_id, _ in train_seqmap[user_id]:
+                items.add(item_id)
+    # Clear new items
+    for user_id, seq in tqdm(list(test_seqmap.items())):
+        seq_ = [(i, t) for i, t in seq if i in items]
+        if len(seq_) > target_len:
+            test_seqmap[user_id] = seq_
         else:
             del test_seqmap[user_id]
     return train_seqmap, test_seqmap
 
 
-def make_dataset(
-    user_seq: UserSequence, input_len: int, target_len: int, no_augment: bool
-) -> Dataset:
+def make_dataset(user_seq, input_len, target_len, no_augment):
     dataset = []
-    for user_id, seq in user_seq.items():
-        if no_augment:
+    for user_id, seq in tqdm(user_seq.items()):
+        if len(seq) < input_len + target_len:
+            padding_num = input_len + target_len - len(seq)
+            dataset.append(
+                (
+                    user_id,
+                    [(-1, -1)] * padding_num + seq[:-target_len],
+                    seq[-target_len:],
+                )
+            )
+        elif len(seq) == input_len + target_len:
             dataset.append((user_id, seq[:-target_len], seq[-target_len:]))
         else:
-            augmented_seqs = augment_sequence(seq, user_id, input_len, target_len)
-            dataset.extend(augmented_seqs)
-    return dataset
+            if no_augment:
+                dataset.append(
+                    (
+                        user_id,
+                        seq[-target_len - input_len : -target_len],
+                        seq[-target_len:],
+                    )
+                )
+            else:
+                augmented_seqs = [
+                    (
+                        user_id,
+                        seq[i : i + input_len],
+                        seq[i + input_len : i + input_len + target_len],
+                    )
+                    for i in range(len(seq) - input_len - target_len + 1)
+                ]
+                dataset.extend(augmented_seqs)
+    dataset_ = []
+    for data in dataset:
+        input_items, input_timestamps = list(zip(*data[1]))
+        target_items, target_timestamps = list(zip(*data[2]))
+        dataset_.append(
+            (data[0], input_items, target_items, input_timestamps, target_timestamps)
+        )
+    return dataset_
 
 
-def augment_sequence(
-    seq: Sequence, user_id: int, input_len: int, target_len: int
-) -> List[Data]:
-    """ `seq` is assumed to be longer than `target_len`, 
-    this has been guaranteed when splitting sequences
-    """
-    lack_num = input_len + target_len - len(seq)
-    if lack_num > 0:
-        # padding 0
-        datalist = [(user_id, [0] * lack_num + seq[:-target_len], seq[-target_len:])]
-    else:
-        datalist = [
-            (
-                user_id,
-                seq[i : i + input_len],
-                seq[i + input_len : i + input_len + target_len],
-            )
-            for i in range(1 - lack_num)
-        ]
-    return datalist
-
-
-def drop_infrequent_users(df: DataFrame, min_freq: int) -> DataFrame:
-    counts = df.user_id.value_counts()
-    df = df[df.user_id.isin(counts[counts.ge(min_freq)].index)]
+def drop_users(df, min_freq):
+    counts = df["user_id"].value_counts()
+    df = df[df["user_id"].isin(counts[counts >= min_freq].index)]
     return df
 
 
-def drop_infrequent_items(df: DataFrame, min_freq: int) -> DataFrame:
-    counts = df.item_id.value_counts()
-    df = df[df.item_id.isin(counts[counts.ge(min_freq)].index)]
+def drop_items(df, min_freq):
+    counts = df["item_id"].value_counts()
+    df = df[df["item_id"].isin(counts[counts >= min_freq].index)]
     return df
 
 
-def dump(path: Path, train_data: Dataset, test_data: Dataset, mode: str) -> None:
+def dump(path, train_data, test_data, mode):
     """ Save preprocessed datasets """
     os.makedirs(path.joinpath(mode))
     with open(path.joinpath(mode, "train.pkl"), "wb") as f:
@@ -200,10 +226,12 @@ def dump(path: Path, train_data: Dataset, test_data: Dataset, mode: str) -> None
     users = set()
     items = set()
     interactions = 0
-    for user_id, inputs, targets in train_data:
-        users.add(user_id)
-        items.update(inputs + targets)
-        interactions += len(inputs)
+    for user, input_items, target_items, _, _ in train_data:
+        users.add(user)
+        for item in input_items + target_items:
+            if item > 0:
+                items.add(item)
+                interactions += 1
     stats = {"users": len(users), "items": len(items), "interactions": interactions}
     with open(path.joinpath(mode, "stats.json"), "w") as f:
         json.dump(stats, f)

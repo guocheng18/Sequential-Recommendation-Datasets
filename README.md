@@ -73,11 +73,10 @@ for epoch in range(10):
 ```
 
 ## TODO
-- [ ] Add negative sampling
-- [ ] Add timestamp feature to dataset
-- [ ] Support Custom datasets
+- [ ] Enable session split
 - [ ] Add time-based dataset splitting
 - [ ] More datasets
+- [ ] Support Custom datasets
 
 
 ## Disclaimers

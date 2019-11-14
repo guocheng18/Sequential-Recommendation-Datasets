@@ -2,3 +2,4 @@
 .warehouse
 __pycache__
 *.egg-info
+tests/

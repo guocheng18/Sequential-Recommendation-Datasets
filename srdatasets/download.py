@@ -4,7 +4,7 @@ from srdatasets.utils import __warehouse__
 from srdatasets.datasets import dataset_classes
 
 
-def _download(dataset_name: str) -> None:
+def _download(dataset_name):
     _rawdir = __warehouse__.joinpath(dataset_name, "raw")
     os.makedirs(_rawdir, exist_ok=True)
 

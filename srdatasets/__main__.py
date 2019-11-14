@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 import sys
 import unicodedata
 
@@ -10,14 +9,8 @@ from tabulate import tabulate
 from srdatasets.datasets import __datasets__
 from srdatasets.download import _download
 from srdatasets.process import _process
-from srdatasets.utils import (
-    __warehouse__,
-    get_downloaded_datasets,
-    get_processed_datasets,
-    read_json,
-)
-
-os.environ["PYTHONIOENCODING"] = "utf-8"
+from srdatasets.utils import (__warehouse__, get_downloaded_datasets,
+                              get_processed_datasets, read_json)
 
 logging.basicConfig(
     level=logging.INFO,

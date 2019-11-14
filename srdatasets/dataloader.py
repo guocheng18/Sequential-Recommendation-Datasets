@@ -1,3 +1,4 @@
+import copy
 import logging
 import math
 import os
@@ -44,14 +45,14 @@ class DataLoader:
         """
         if dataset_name not in __datasets__:
             raise ValueError(
-                "{} is not supported, currently supported datasets: {}".format(
-                    dataset_name, ", ".join(__datasets__)
+                "Unrecognized dataset, currently supported datasets: {}".format(
+                    ", ".join(__datasets__)
                 )
             )
 
         if dataset_name not in self._processed_datasets:
             raise ValueError(
-                "{} is not processed, currently processed datasets: {}".format(
+                "{} has not been processed, currently processed datasets: {}".format(
                     dataset_name,
                     ", ".join(self._processed_datasets)
                     if self._processed_datasets
@@ -89,7 +90,7 @@ class DataLoader:
 
         if train:
             counter = Counter()
-            for _, input_items, target_items in self.dataset:
+            for _, input_items, target_items, _, _ in self.dataset:
                 counter.update(input_items + target_items)
             self.item_counts = np.array([counter[i] for i in range(len(counter))])
 
@@ -102,6 +103,7 @@ class DataLoader:
         self.train = train
         self.include_timestamp = include_timestamp
         self.negatives_per_target = negatives_per_target
+        self.drop_last = drop_last
         self._batch_idx = 0
 
     def __iter__(self):
@@ -118,7 +120,7 @@ class DataLoader:
     def sample_negatives(self, input_items, target_items):
         negatives = []
         for b in np.concatenate((input_items, target_items), 1):
-            item_counts = self.item_counts  # deepcopy ?
+            item_counts = copy.deepcopy(self.item_counts)
             item_counts[b] = 0
             item_counts[0] = 0
             probs = item_counts / item_counts.sum()
@@ -157,7 +159,7 @@ class DataLoader:
             if not self.include_timestamp:
                 batch_data = batch_data[:3]
             # Sampling negatives
-            if train and self.negatives_per_target > 0:
+            if self.train and self.negatives_per_target > 0:
                 negatives = self.sample_negatives(batch_data[1], batch_data[2])
                 batch_data.append(negatives)
             return batch_data
