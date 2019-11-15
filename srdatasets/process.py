@@ -5,6 +5,7 @@ import os
 import pickle
 import time
 from pathlib import Path
+from datetime import datetime
 
 from tqdm import tqdm
 
@@ -32,6 +33,7 @@ def _process(args):
         "target_len": args.target_len,
         "no_augment": args.no_augment,
         "session_interval": args.session_interval,
+        "split_by": args.split_by,
     }
     if classname in ["Amazon", "MovieLens20M", "Yelp"]:
         config["rating_threshold"] = args.rating_threshold
@@ -49,7 +51,35 @@ def _process(args):
         df = d.transform(args.item_type)
     else:
         df = d.transform()
+
+    if args.split == "time":
+        config["dev_last_days"], config["test_last_days"] = access_split_days(df)
+
     preprocess_and_save(df, args.dataset, config)
+
+
+def access_split_days(df):
+    min_timestamp = df["timestamp"].min()
+    max_timestamp = df["timestamp"].max()
+    first_day = datetime.fromtimestamp(min_timestamp).strftime("%Y-%m-%d")
+    last_day = datetime.fromtimestamp(max_timestamp).strftime("%Y-%m-%d")
+    total_days = math.ceil((max_timestamp - min_timestamp) / 86400)
+    print("Date range: {} ~ {}, total days: {}".format(first_day, last_day, total_days))
+    while True:
+        try:
+            test_last_days = int(input("Last N days for test: "))
+            dev_last_days = int(input("Last N days for dev: "))
+            if test_last_days <= 0 or dev_last_days <= 0:
+                raise ValueError
+            elif test_last_days + dev_last_days >= total_days:
+                raise AssertionError
+            else:
+                break
+        except ValueError:
+            print("Please input a positive integer!")
+        except AssertionError:
+            print("test_last_days + dev_last_days < total_days")
+    return dev_last_days, test_last_days
 
 
 def preprocess_and_save(df, dname, config):

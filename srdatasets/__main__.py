@@ -65,6 +65,13 @@ parser_g.add_argument(
     help="split user sequences into sessions (minutes)",
 )
 parser_g.add_argument(
+    "--split-by",
+    type=str,
+    choices=["user", "time"],
+    default="user",
+    help="user-based or time-based dataset splitting",
+)
+parser_g.add_argument(
     "--rating-threshold",
     type=int,
     default=4,
