@@ -49,14 +49,20 @@ parser_g.add_argument(
     "--min-freq-item", type=int, default=5, help="minimum occurrence times of item"
 )
 parser_g.add_argument(
-    "--min-freq-user", type=int, default=10, help="minimum occurrence times of user"
+    "--min-freq-user", type=int, default=5, help="minimum occurrence times of user"
 )
 parser_g.add_argument("--input-len", type=int, default=5, help="input sequence length")
 parser_g.add_argument(
     "--target-len", type=int, default=3, help="target sequence length"
 )
 parser_g.add_argument(
-    "--no-augment", action="store_true", help="Do not use data augmentation"
+    "--no-augment", action="store_true", help="do not use data augmentation"
+)
+parser_g.add_argument(
+    "--session-interval",
+    type=int,
+    default=0,
+    help="split user sequences into sessions (minutes)",
 )
 parser_g.add_argument(
     "--rating-threshold",
@@ -100,6 +106,8 @@ else:
             raise ValueError("{} has not been downloaded".format(args.dataset))
         if args.min_freq_user <= args.target_len:
             raise ValueError("min_freq_user should be greater than target_len")
+        if args.session_interval < 0:
+            raise ValueError("session interval must >= 0 minutes")
         if args.dataset in processed_datasets:
             for c in processed_datasets[args.dataset]:
                 config = read_json(
@@ -168,7 +176,9 @@ else:
                             for m in ["dev", "test"]
                         ]
                     )
-                    modes = ["dev", "test"] * len(processed_datasets[args.dataset])
+                    modes = ["development", "test"] * len(
+                        processed_datasets[args.dataset]
+                    )
                     stats.insert(0, "mode", modes)
                     ids = []
                     for c in processed_datasets[args.dataset]:
