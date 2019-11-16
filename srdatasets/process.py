@@ -216,13 +216,15 @@ def split_sequences_user_session(user_seq, target_len, test_ratio):
                 user_sessions.append((user_id, seq))
             else:
                 train_num = math.floor((1 - test_ratio) * len(user_sessions))
-                train_seqs.extend(user_sessions[:train_num])
-                test_seqs.extend(user_sessions[train_num:])
+                if train_num > 0:
+                    train_seqs.extend(user_sessions[:train_num])
+                    test_seqs.extend(user_sessions[train_num:])
                 user_sessions = [(user_id, seq)]
     if user_sessions:  # last user
         train_num = math.floor((1 - test_ratio) * len(user_sessions))
-        train_seqs.extend(user_sessions[:train_num])
-        test_seqs.extend(user_sessions[train_num:])
+        if train_num > 0:
+            train_seqs.extend(user_sessions[:train_num])
+            test_seqs.extend(user_sessions[train_num:])
     return train_seqs, test_seqs
 
 
