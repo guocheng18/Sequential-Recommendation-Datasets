@@ -94,14 +94,28 @@ def preprocess_and_save(df, dname, config):
     seqs = generate_sequences(
         df, config["min_freq_item"], config["min_freq_user"], config["session_interval"]
     )
-    # Split sequences
+    # Split sequences in different ways
+    if config["split_by"] == "user":
+        if config["session_interval"]:
+            split_sequences = split_sequences_user_session
+        else:
+            split_sequences = split_sequences_user
+    else:
+        pass
     logger.info("Splitting user sequences into train/test...")
     train_seqs, test_seqs = split_sequences(
         seqs, config["target_len"], config["test_ratio"]
     )
+    logger.info("Removing new items in test...")
+    test_seqs = remove_new_items(train_seqs, test_seqs, config["target_len"])
+
     logger.info("Splitting train into dev-train/dev-test...")
     dev_train_seqs, dev_test_seqs = split_sequences(
         train_seqs, config["target_len"], config["dev_ratio"]
+    )
+    logger.info("Removing new items in dev-test...")
+    dev_test_seqs = remove_new_items(
+        dev_train_seqs, dev_test_seqs, config["target_len"]
     )
     # Make datasets
     logger.info("Making datasets...")
@@ -186,38 +200,63 @@ def generate_sequences(df, min_freq_item, min_freq_user, session_interval):
     return seqs
 
 
-def split_sequences(user_seq, target_len, test_ratio):
-    """Split user sequences into train/test subsequences
+def split_sequences_user_session(user_seq, target_len, test_ratio):
+    """ User-based with sessions 
     """
     train_seqs = []
     test_seqs = []
+    user_sessions = []
+    for user_id, seq in tqdm(user_seq):
+        if len(seq) <= target_len:
+            continue
+        if not user_sessions:  # first
+            user_sessions.append((user_id, seq))
+        else:
+            if user_id == user_sessions[-1][0]:
+                user_sessions.append((user_id, seq))
+            else:
+                train_num = math.floor((1 - test_ratio) * len(user_sessions))
+                train_seqs.extend(user_sessions[:train_num])
+                test_seqs.extend(user_sessions[train_num:])
+                user_sessions = [(user_id, seq)]
+    if user_sessions:  # last user
+        train_num = math.floor((1 - test_ratio) * len(user_sessions))
+        train_seqs.extend(user_sessions[:train_num])
+        test_seqs.extend(user_sessions[train_num:])
+    return train_seqs, test_seqs
+
+
+def remove_new_items(train_seqs, test_seqs, target_len):
     items = set()
+    for user_id, seq in tqdm(train_seqs):
+        items.update([i for i, t in seq])
+    test_seq_ = []
+    for user_id, seq in tqdm(test_seqs):
+        seq_ = [(i, t) for i, t in seq if i in items]
+        if len(seq_) > target_len:
+            test_seq_.append((user_id, seq_))
+    return test_seqs_
+
+
+def split_sequences_user(user_seq, target_len, test_ratio):
+    """ User-based without sessions 
+    """
+    train_seqs = []
+    test_seqs = []
     for user_id, seq in tqdm(user_seq):
         train_len = math.floor(len(seq) * (1 - test_ratio))
         test_len = len(seq) - train_len
         # Split
-        train_seq = []
         if train_len > target_len:
             if test_len > target_len:
                 train_seqs.append((user_id, seq[:train_len]))
                 test_seqs.append((user_id, seq[train_len:]))
-                train_seq = seq[:train_len]
             else:
                 train_seqs.append((user_id, seq))
-                train_seq = seq
         else:
             if len(seq) > target_len:
                 train_seqs.append((user_id, seq))
-                train_seq = seq
-        for item_id, _ in train_seq:
-            items.add(item_id)
-    # Clear new items
-    test_seq_ = []
-    for user_id, seq in test_seqs:
-        seq_ = [(i, t) for i, t in seq if i in items]
-        if len(seq_) > target_len:
-            test_seq_.append((user_id, seq_))
-    return train_seqs, test_seq_
+    return train_seqs, test_seqs
 
 
 def make_dataset(user_seq, input_len, target_len, no_augment):
