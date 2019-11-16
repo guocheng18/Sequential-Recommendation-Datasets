@@ -54,6 +54,7 @@ def _process(args):
 
     if args.split == "time":
         config["dev_last_days"], config["test_last_days"] = access_split_days(df)
+        config["max_timestamp"] = df["timestamp"].max()
 
     preprocess_and_save(df, args.dataset, config)
 
@@ -91,9 +92,8 @@ def preprocess_and_save(df, dname, config):
     """
     # Generate sequences
     logger.info("Generating user sequences...")
-    seqs = generate_sequences(
-        df, config["min_freq_item"], config["min_freq_user"], config["session_interval"]
-    )
+    seqs = generate_sequences(df, config)
+
     # Split sequences in different ways
     if config["split_by"] == "user":
         if config["session_interval"]:
@@ -101,28 +101,25 @@ def preprocess_and_save(df, dname, config):
         else:
             split_sequences = split_sequences_user
     else:
-        pass
+        if config["session_interval"]:
+            split_sequences = split_sequences_time_session
+        else:
+            split_sequences = split_sequences_time
+
     logger.info("Splitting user sequences into train/test...")
-    train_seqs, test_seqs = split_sequences(
-        seqs, config["target_len"], config["test_ratio"]
-    )
+    train_seqs, test_seqs = split_sequences(seqs, config, 0)
     logger.info("Removing new items in test...")
-    test_seqs = remove_new_items(train_seqs, test_seqs, config["target_len"])
+    test_seqs = remove_new_items(train_seqs, test_seqs, config)
 
     logger.info("Splitting train into dev-train/dev-test...")
-    dev_train_seqs, dev_test_seqs = split_sequences(
-        train_seqs, config["target_len"], config["dev_ratio"]
-    )
+    dev_train_seqs, dev_test_seqs = split_sequences(train_seqs, config, 1)
     logger.info("Removing new items in dev-test...")
-    dev_test_seqs = remove_new_items(
-        dev_train_seqs, dev_test_seqs, config["target_len"]
-    )
+    dev_test_seqs = remove_new_items(dev_train_seqs, dev_test_seqs, config)
+
     # Make datasets
     logger.info("Making datasets...")
     train_data, test_data, dev_train_data, dev_test_data = [
-        make_dataset(
-            seqs, config["input_len"], config["target_len"], config["no_augment"]
-        )
+        make_dataset(seqs, config)
         for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
     ]
     # Reassign user_ids and item_ids
@@ -134,8 +131,11 @@ def preprocess_and_save(df, dname, config):
     processed_path = __warehouse__.joinpath(
         dname, "processed", "c" + str(int(time.time() * 1000))
     )
-    dump(processed_path, train_data, test_data, "test")
-    dump(processed_path, dev_train_data, dev_test_data, "dev")
+    dump(processed_path, train_data, test_data, 0)
+    dump(processed_path, dev_train_data, dev_test_data, 1)
+    # Save config
+    if "max_timestamp" in config:
+        del config["max_timestamp"]
     with open(processed_path.joinpath("config.json"), "w") as f:
         json.dump(config, f)
     logger.info("OK")
@@ -168,12 +168,12 @@ def reassign_ids(train_data, test_data):
     return train_data_, test_data_
 
 
-def generate_sequences(df, min_freq_item, min_freq_user, session_interval):
-    logger.warning("Dropping items (freq < {})...".format(min_freq_item))
-    df = drop_items(df, min_freq_item)
+def generate_sequences(df, config):
+    logger.warning("Dropping items (freq < {})...".format(config["min_freq_item"]))
+    df = drop_items(df, config["min_freq_item"])
 
-    logger.warning("Dropping users (freq < {})...".format(min_freq_user))
-    df = drop_users(df, min_freq_user)
+    logger.warning("Dropping users (freq < {})...".format(config["min_freq_user"]))
+    df = drop_users(df, config["min_freq_user"])
 
     logger.info("Grouping items by user...")
     df = df.sort_values("timestamp", ascending=True)
@@ -181,7 +181,7 @@ def generate_sequences(df, min_freq_item, min_freq_user, session_interval):
     seqs = df.groupby("user_id")["item_and_time"].progress_apply(list)
     seqs = list(zip(seqs.index, seqs))
 
-    if session_interval > 0:
+    if config["session_interval"] > 0:
         logger.info("Splitting sessions...")
         _seqs = []
         for user_id, seq in tqdm(seqs):
@@ -190,7 +190,7 @@ def generate_sequences(df, min_freq_item, min_freq_user, session_interval):
                 if i == 0:
                     seq_buffer.append((item_id, timestamp))
                 else:
-                    if timestamp - seq[i - 1][1] > session_interval * 60:
+                    if timestamp - seq[i - 1][1] > config["session_interval"] * 60:
                         _seqs.append((user_id, seq_buffer))
                         seq_buffer = [(item_id, timestamp)]
                     else:
@@ -200,14 +200,37 @@ def generate_sequences(df, min_freq_item, min_freq_user, session_interval):
     return seqs
 
 
-def split_sequences_user_session(user_seq, target_len, test_ratio):
+def split_sequences_user(user_seq, config, mode):
+    """ User-based without sessions 
+    """
+    test_ratio = config["dev_ratio"] if mode else config["test_ratio"]
+    train_seqs = []
+    test_seqs = []
+    for user_id, seq in tqdm(user_seq):
+        train_len = math.floor(len(seq) * (1 - test_ratio))
+        test_len = len(seq) - train_len
+        # Split
+        if train_len > config["target_len"]:
+            if test_len > config["target_len"]:
+                train_seqs.append((user_id, seq[:train_len]))
+                test_seqs.append((user_id, seq[train_len:]))
+            else:
+                train_seqs.append((user_id, seq))
+        else:
+            if len(seq) > config["target_len"]:
+                train_seqs.append((user_id, seq))
+    return train_seqs, test_seqs
+
+
+def split_sequences_user_session(user_seq, config, mode):
     """ User-based with sessions 
     """
+    test_ratio = config["dev_ratio"] if mode else config["test_ratio"]
     train_seqs = []
     test_seqs = []
     user_sessions = []
     for user_id, seq in tqdm(user_seq):
-        if len(seq) <= target_len:
+        if len(seq) <= config["target_len"]:
             continue
         if not user_sessions:  # first
             user_sessions.append((user_id, seq))
@@ -228,40 +251,57 @@ def split_sequences_user_session(user_seq, target_len, test_ratio):
     return train_seqs, test_seqs
 
 
-def remove_new_items(train_seqs, test_seqs, target_len):
+def split_sequences_time(user_seq, config, mode):
+    """ Time-based without sessions
+    """
+    last_days = (
+        config["dev_last_days"] + config["test_last_days"]
+        if mode
+        else config["test_last_days"]
+    )
+    split_timestamp = config["max_timestamp"] - last_days * 86400
+    train_seqs = []
+    test_seqs = []
+    for user_id, seq in tqdm(user_seq):
+        if len(seq) <= config["target_len"]:
+            continue
+        train_num = 0
+        for item, timestamp in seq:
+            if timestamp < split_timestamp:
+                train_num += 1
+        if train_num > config["target_len"]:
+            train_seqs.append((user_id, seq[:train_num]))
+            if len(seq) - train_num > config["target_len"]:
+                test_seqs.append((user_id, seq[train_num:]))
+    return train_seqs, test_seqs
+
+
+def split_sequences_time_sessions(user_seq, config, mode):
+    """ Time-based with sessions
+    """
+    last_days = (
+        config["dev_last_days"] + config["test_last_days"]
+        if mode
+        else config["test_last_days"]
+    )
+    split_timestamp = config["max_timestamp"] - last_days * 86400
+
+
+def remove_new_items(train_seqs, test_seqs, config):
     items = set()
     for user_id, seq in tqdm(train_seqs):
         items.update([i for i, t in seq])
     test_seq_ = []
     for user_id, seq in tqdm(test_seqs):
         seq_ = [(i, t) for i, t in seq if i in items]
-        if len(seq_) > target_len:
+        if len(seq_) > config["target_len"]:
             test_seq_.append((user_id, seq_))
     return test_seqs_
 
 
-def split_sequences_user(user_seq, target_len, test_ratio):
-    """ User-based without sessions 
-    """
-    train_seqs = []
-    test_seqs = []
-    for user_id, seq in tqdm(user_seq):
-        train_len = math.floor(len(seq) * (1 - test_ratio))
-        test_len = len(seq) - train_len
-        # Split
-        if train_len > target_len:
-            if test_len > target_len:
-                train_seqs.append((user_id, seq[:train_len]))
-                test_seqs.append((user_id, seq[train_len:]))
-            else:
-                train_seqs.append((user_id, seq))
-        else:
-            if len(seq) > target_len:
-                train_seqs.append((user_id, seq))
-    return train_seqs, test_seqs
-
-
-def make_dataset(user_seq, input_len, target_len, no_augment):
+def make_dataset(user_seq, config):
+    input_len = config["input_len"]
+    target_len = config["target_len"]
     dataset = []
     for user_id, seq in tqdm(user_seq):
         if len(seq) < input_len + target_len:
@@ -276,7 +316,7 @@ def make_dataset(user_seq, input_len, target_len, no_augment):
         elif len(seq) == input_len + target_len:
             dataset.append((user_id, seq[:-target_len], seq[-target_len:]))
         else:
-            if no_augment:
+            if config["no_augment"]:
                 dataset.append(
                     (
                         user_id,
@@ -339,13 +379,14 @@ def drop_items(df, min_freq):
 
 def dump(path, train_data, test_data, mode):
     """ Save preprocessed datasets """
-    os.makedirs(path.joinpath(mode))
-    with open(path.joinpath(mode, "train.pkl"), "wb") as f:
+    dirname = "dev" if mode else "test"
+    os.makedirs(path.joinpath(dirname))
+    with open(path.joinpath(dirname, "train.pkl"), "wb") as f:
         pickle.dump(train_data, f)
-    with open(path.joinpath(mode, "test.pkl"), "wb") as f:
+    with open(path.joinpath(dirname, "test.pkl"), "wb") as f:
         pickle.dump(test_data, f)
     stats = cal_stats(train_data, test_data)
-    with open(path.joinpath(mode, "stats.json"), "w") as f:
+    with open(path.joinpath(dirname, "stats.json"), "w") as f:
         json.dump(stats, f)
 
 

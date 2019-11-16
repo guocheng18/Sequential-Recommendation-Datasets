@@ -111,6 +111,14 @@ else:
     elif args.command == "process":
         if args.dataset not in downloaded_datasets:
             raise ValueError("{} has not been downloaded".format(args.dataset))
+        if args.dev_ratio <= 0 or args.dev_ratio >= 1:
+            raise ValueError("dev ratio should be in (0, 1)")
+        if args.test_ratio <= 0 or args.test_ratio >= 1:
+            raise ValueError("test ratio should be in (0, 1)")
+        if args.input_len <= 0:
+            raise ValueError("input length must > 0")
+        if args.target_len <= 0:
+            raise ValueError("target length must > 0")
         if args.min_freq_user <= args.target_len:
             raise ValueError("min_freq_user should be greater than target_len")
         if args.session_interval < 0:
