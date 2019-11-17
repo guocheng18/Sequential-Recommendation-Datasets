@@ -31,6 +31,7 @@ def _process(args):
         "input_len": args.input_len,
         "target_len": args.target_len,
         "no_augment": args.no_augment,
+        "remove_duplicates": args.remove_duplicates,
         "session_interval": args.session_interval,
         "split_by": args.split_by,
         "dev_split": args.dev_split,
@@ -55,7 +56,11 @@ def _process(args):
 
     if args.split_by == "time":
         config["dev_split"], config["test_split"] = access_split_days(df)
-        if (config["dev_split"], config["test_split"]) in args.time_splits:
+        # Processed check
+        if (
+            "time_splits" in args
+            and (config["dev_split"], config["test_split"]) in args.time_splits
+        ):
             logger.warning(
                 "You have run this config, the config id is {}".format(
                     args.time_splits[(config["dev_split"], config["test_split"])]
@@ -118,16 +123,26 @@ def preprocess_and_save(df, dname, config):
     logger.info("Removing new items in dev-test...")
     dev_test_seqs = remove_new_items(dev_train_seqs, dev_test_seqs, config)
 
+    # Remove duplicates (optional)
+    if config["remove_duplicates"]:
+        logger.info("Removing duplicates...")
+        train_seqs, test_seqs, dev_train_seqs, dev_test_seqs = [
+            remove_duplicates(seqs, config)
+            for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
+        ]
+
     # Make datasets
     logger.info("Making datasets...")
     train_data, test_data, dev_train_data, dev_test_data = [
         make_dataset(seqs, config)
         for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
     ]
+
     # Reassign user_ids and item_ids
     logger.info("Reassigning ids...")
     train_data, test_data = reassign_ids(train_data, test_data)
     dev_train_data, dev_test_data = reassign_ids(dev_train_data, dev_test_data)
+
     # Dump to disk
     logger.info("Dumping...")
     processed_path = __warehouse__.joinpath(
@@ -286,6 +301,22 @@ def remove_new_items(train_seqs, test_seqs, config):
         if len(seq_) > config["target_len"]:
             test_seqs_.append((user_id, seq_))
     return test_seqs_
+
+
+def remove_duplicates(user_seq, config):
+    """ By default, we keep the first
+    """
+    user_seq_ = []
+    for user_id, seq in tqdm(user_seq):
+        seq_ = []
+        shown_items = set()
+        for item, timestamp in seq:
+            if item not in shown_items:
+                shown_items.add(item)
+                seq_.append((item, timestamp))
+        if len(seq_) > config["target_len"]:
+            user_seq_.append((user_id, seq_))
+    return user_seq_
 
 
 def make_dataset(user_seq, config):

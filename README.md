@@ -73,7 +73,6 @@ for epoch in range(10):
 ```
 
 ## TODO
-- [ ] Add time-based dataset splitting
 - [ ] More datasets
 - [ ] Support Custom datasets
 
