@@ -3,9 +3,10 @@ import logging
 import math
 import os
 import pickle
+import sys
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from tqdm import tqdm
 
@@ -27,13 +28,13 @@ def _process(args):
     config = {
         "min_freq_user": args.min_freq_user,
         "min_freq_item": args.min_freq_item,
-        "dev_ratio": args.dev_ratio,
-        "test_ratio": args.test_ratio,
         "input_len": args.input_len,
         "target_len": args.target_len,
         "no_augment": args.no_augment,
         "session_interval": args.session_interval,
         "split_by": args.split_by,
+        "dev_split": args.dev_split,
+        "test_split": args.test_split,
     }
     if classname in ["Amazon", "MovieLens20M", "Yelp"]:
         config["rating_threshold"] = args.rating_threshold
@@ -52,8 +53,15 @@ def _process(args):
     else:
         df = d.transform()
 
-    if args.split == "time":
-        config["dev_last_days"], config["test_last_days"] = access_split_days(df)
+    if args.split_by == "time":
+        config["dev_split"], config["test_split"] = access_split_days(df)
+        if (config["dev_split"], config["test_split"]) in args.time_splits:
+            logger.warning(
+                "You have run this config, the config id is {}".format(
+                    args.time_splits[(config["dev_split"], config["test_split"])]
+                )
+            )
+            sys.exit(1)
         config["max_timestamp"] = df["timestamp"].max()
 
     preprocess_and_save(df, args.dataset, config)
@@ -95,24 +103,18 @@ def preprocess_and_save(df, dname, config):
     seqs = generate_sequences(df, config)
 
     # Split sequences in different ways
-    if config["split_by"] == "user":
-        if config["session_interval"]:
-            split_sequences = split_sequences_user_session
-        else:
-            split_sequences = split_sequences_user
+    if config["session_interval"] > 0:
+        split = split_sequences_session
     else:
-        if config["session_interval"]:
-            split_sequences = split_sequences_time_session
-        else:
-            split_sequences = split_sequences_time
+        split = split_sequences
 
     logger.info("Splitting user sequences into train/test...")
-    train_seqs, test_seqs = split_sequences(seqs, config, 0)
+    train_seqs, test_seqs = split(seqs, config, 0)
     logger.info("Removing new items in test...")
     test_seqs = remove_new_items(train_seqs, test_seqs, config)
 
     logger.info("Splitting train into dev-train/dev-test...")
-    dev_train_seqs, dev_test_seqs = split_sequences(train_seqs, config, 1)
+    dev_train_seqs, dev_test_seqs = split(train_seqs, config, 1)
     logger.info("Removing new items in dev-test...")
     dev_test_seqs = remove_new_items(dev_train_seqs, dev_test_seqs, config)
 
@@ -134,10 +136,7 @@ def preprocess_and_save(df, dname, config):
     dump(processed_path, train_data, test_data, 0)
     dump(processed_path, dev_train_data, dev_test_data, 1)
     # Save config
-    if "max_timestamp" in config:
-        del config["max_timestamp"]
-    with open(processed_path.joinpath("config.json"), "w") as f:
-        json.dump(config, f)
+    save_config(processed_path, config)
     logger.info("OK")
 
 
@@ -146,25 +145,29 @@ def reassign_ids(train_data, test_data):
     """
     user_to_idx = {}
     item_to_idx = {-1: 0}
-    # Train collect
     train_data_ = []
-    for user, input_i, target_i, input_t, target_t in tqdm(train_data):
+    test_data_ = []
+    for user, input_items, target_items, input_times, target_times in tqdm(train_data):
+        # build user dict
         if user not in user_to_idx:
             user_to_idx[user] = len(user_to_idx)
         user_ = user_to_idx[user]
-        for i in input_i + target_i:
-            if i not in item_to_idx:
-                item_to_idx[i] = len(item_to_idx)
-        input_i_ = [item_to_idx[i] for i in input_i]
-        target_i_ = [item_to_idx[i] for i in target_i]
-        train_data_.append((user_, input_i_, target_i_, input_t, target_t))
-    # Test apply
-    test_data_ = []
-    for user, input_i, target_i, input_t, target_t in tqdm(test_data):
+        # build item dict
+        for item in input_items + target_items:
+            if item not in item_to_idx:
+                item_to_idx[item] = len(item_to_idx)
+        input_items_ = [item_to_idx[i] for i in input_items]
+        target_items_ = [item_to_idx[i] for i in target_items]
+        train_data_.append(
+            (user_, input_items_, target_items_, input_times, target_times)
+        )
+    for user, input_items, target_items, input_times, target_times in tqdm(test_data):
         user_ = user_to_idx[user]
-        input_i_ = [item_to_idx[i] for i in input_i]
-        target_i_ = [item_to_idx[i] for i in target_i]
-        test_data_.append((user_, input_i_, target_i_, input_t, target_t))
+        input_items_ = [item_to_idx[i] for i in input_items]
+        target_items_ = [item_to_idx[i] for i in target_items]
+        test_data_.append(
+            (user_, input_items_, target_items_, input_times, target_times)
+        )
     return train_data_, test_data_
 
 
@@ -179,7 +182,7 @@ def generate_sequences(df, config):
     df = df.sort_values("timestamp", ascending=True)
     df["item_and_time"] = list(zip(df["item_id"], df["timestamp"]))
     seqs = df.groupby("user_id")["item_and_time"].progress_apply(list)
-    seqs = list(zip(seqs.index, seqs))
+    seqs = list(zip(seqs.index, seqs))  # no check on sequence length
 
     if config["session_interval"] > 0:
         logger.info("Splitting sessions...")
@@ -191,84 +194,37 @@ def generate_sequences(df, config):
                     seq_buffer.append((item_id, timestamp))
                 else:
                     if timestamp - seq[i - 1][1] > config["session_interval"] * 60:
-                        _seqs.append((user_id, seq_buffer))
+                        if len(seq_buffer) > config["target_len"]:
+                            _seqs.append((user_id, seq_buffer))
                         seq_buffer = [(item_id, timestamp)]
                     else:
                         seq_buffer.append((item_id, timestamp))
-            _seqs.append((user_id, seq_buffer))
+            if len(seq_buffer) > config["target_len"]:
+                _seqs.append((user_id, seq_buffer))
         seqs = _seqs
     return seqs
 
 
-def split_sequences_user(user_seq, config, mode):
-    """ User-based without sessions 
+def split_sequences(user_seq, config, mode):
+    """ Without sessions 
     """
-    test_ratio = config["dev_ratio"] if mode else config["test_ratio"]
+    if config["split_by"] == "user":
+        test_ratio = config["dev_split"] if mode else config["test_split"]
+    else:
+        last_days = (
+            config["dev_split"] + config["test_split"] if mode else config["test_split"]
+        )
+        split_timestamp = config["max_timestamp"] - last_days * 86400
     train_seqs = []
     test_seqs = []
     for user_id, seq in tqdm(user_seq):
-        train_len = math.floor(len(seq) * (1 - test_ratio))
-        test_len = len(seq) - train_len
-        # Split
-        if train_len > config["target_len"]:
-            if test_len > config["target_len"]:
-                train_seqs.append((user_id, seq[:train_len]))
-                test_seqs.append((user_id, seq[train_len:]))
-            else:
-                train_seqs.append((user_id, seq))
-        else:
-            if len(seq) > config["target_len"]:
-                train_seqs.append((user_id, seq))
-    return train_seqs, test_seqs
-
-
-def split_sequences_user_session(user_seq, config, mode):
-    """ User-based with sessions 
-    """
-    test_ratio = config["dev_ratio"] if mode else config["test_ratio"]
-    train_seqs = []
-    test_seqs = []
-    user_sessions = []
-    for user_id, seq in tqdm(user_seq):
-        if len(seq) <= config["target_len"]:
-            continue
-        if not user_sessions:  # first
-            user_sessions.append((user_id, seq))
-        else:
-            if user_id == user_sessions[-1][0]:
-                user_sessions.append((user_id, seq))
-            else:
-                train_num = math.floor((1 - test_ratio) * len(user_sessions))
-                if train_num > 0:
-                    train_seqs.extend(user_sessions[:train_num])
-                    test_seqs.extend(user_sessions[train_num:])
-                user_sessions = [(user_id, seq)]
-    if user_sessions:  # last user
-        train_num = math.floor((1 - test_ratio) * len(user_sessions))
-        if train_num > 0:
-            train_seqs.extend(user_sessions[:train_num])
-            test_seqs.extend(user_sessions[train_num:])
-    return train_seqs, test_seqs
-
-
-def split_sequences_time(user_seq, config, mode):
-    """ Time-based without sessions
-    """
-    last_days = (
-        config["dev_last_days"] + config["test_last_days"]
-        if mode
-        else config["test_last_days"]
-    )
-    split_timestamp = config["max_timestamp"] - last_days * 86400
-    train_seqs = []
-    test_seqs = []
-    for user_id, seq in tqdm(user_seq):
-        if len(seq) <= config["target_len"]:
-            continue
         train_num = 0
-        for item, timestamp in seq:
-            if timestamp < split_timestamp:
-                train_num += 1
+        if config["split_by"] == "user":
+            train_num = math.ceil(len(seq) * (1 - test_ratio))
+        else:
+            for item, timestamp in seq:
+                if timestamp < split_timestamp:
+                    train_num += 1
         if train_num > config["target_len"]:
             train_seqs.append((user_id, seq[:train_num]))
             if len(seq) - train_num > config["target_len"]:
@@ -276,26 +232,59 @@ def split_sequences_time(user_seq, config, mode):
     return train_seqs, test_seqs
 
 
-def split_sequences_time_sessions(user_seq, config, mode):
-    """ Time-based with sessions
+def split_sequences_session(user_seq, config, mode):
+    """ With sessions, when number of sessions is small, len of test_seqs can be 0
     """
-    last_days = (
-        config["dev_last_days"] + config["test_last_days"]
-        if mode
-        else config["test_last_days"]
-    )
-    split_timestamp = config["max_timestamp"] - last_days * 86400
+    if config["split_by"] == "user":
+        test_ratio = config["dev_split"] if mode else config["test_split"]
+    else:
+        last_days = (
+            config["dev_split"] + config["test_split"] if mode else config["test_split"]
+        )
+        split_timestamp = config["max_timestamp"] - last_days * 86400
+    train_seqs = []
+    test_seqs = []
+    user_sessions = []
+    for i, (user_id, seq) in tqdm(enumerate(user_seq), total=len(user_seq)):
+        if i == 0:
+            user_sessions.append((user_id, seq))
+        else:
+            if user_id == user_seq[i - 1][0]:
+                user_sessions.append((user_id, seq))
+            else:
+                if config["split_by"] == "user":
+                    train_num = math.ceil((1 - test_ratio) * len(user_sessions))
+                else:
+                    train_num = 0
+                    for session in user_sessions:
+                        if session[1][0][1] < split_timestamp:
+                            train_num += 1
+                if train_num > 0:
+                    train_seqs.extend(user_sessions[:train_num])
+                    test_seqs.extend(user_sessions[train_num:])
+                user_sessions = [(user_id, seq)]
+    if config["split_by"] == "user":
+        train_num = math.ceil((1 - test_ratio) * len(user_sessions))
+    else:
+        train_num = 0
+        for session in user_sessions:
+            if session[1][0][1] < split_timestamp:
+                train_num += 1
+    if train_num > 0:
+        train_seqs.extend(user_sessions[:train_num])
+        test_seqs.extend(user_sessions[train_num:])
+    return train_seqs, test_seqs
 
 
 def remove_new_items(train_seqs, test_seqs, config):
     items = set()
     for user_id, seq in tqdm(train_seqs):
         items.update([i for i, t in seq])
-    test_seq_ = []
+    test_seqs_ = []
     for user_id, seq in tqdm(test_seqs):
         seq_ = [(i, t) for i, t in seq if i in items]
         if len(seq_) > config["target_len"]:
-            test_seq_.append((user_id, seq_))
+            test_seqs_.append((user_id, seq_))
     return test_seqs_
 
 
@@ -375,6 +364,13 @@ def drop_items(df, min_freq):
     counts = df["item_id"].value_counts()
     df = df[df["item_id"].isin(counts[counts >= min_freq].index)]
     return df
+
+
+def save_config(path, config):
+    if "max_timestamp" in config:
+        del config["max_timestamp"]
+    with open(path.joinpath("config.json"), "w") as f:
+        json.dump(config, f)
 
 
 def dump(path, train_data, test_data, mode):

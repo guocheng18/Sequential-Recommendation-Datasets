@@ -40,10 +40,10 @@ parser_g = subparsers.add_parser(
 )
 parser_g.add_argument("--dataset", type=str, required=True, help="dataset name")
 parser_g.add_argument(
-    "--dev-ratio", type=float, default=0.1, help="the fraction of developemnt dataset"
+    "--dev-split", type=float, default=0.1, help="the fraction of developemnt dataset"
 )
 parser_g.add_argument(
-    "--test-ratio", type=float, default=0.2, help="the fraction of test dataset"
+    "--test-split", type=float, default=0.2, help="the fraction of test dataset"
 )
 parser_g.add_argument(
     "--min-freq-item", type=int, default=5, help="minimum occurrence times of item"
@@ -57,6 +57,11 @@ parser_g.add_argument(
 )
 parser_g.add_argument(
     "--no-augment", action="store_true", help="do not use data augmentation"
+)
+parser_g.add_argument(
+    "--remove-duplicates",
+    action="store_true",
+    help="remove duplicate items in user sequence",
 )
 parser_g.add_argument(
     "--session-interval",
@@ -93,7 +98,7 @@ if (
     and args.dataset is not None
     and args.dataset.lower() in _datasets_lowercase
 ):
-    args.__dict__["dataset"] = _datasets_lowercase[args.dataset.lower()]
+    args.dataset = _datasets_lowercase[args.dataset.lower()]
 
 
 if args.command is None:
@@ -111,10 +116,10 @@ else:
     elif args.command == "process":
         if args.dataset not in downloaded_datasets:
             raise ValueError("{} has not been downloaded".format(args.dataset))
-        if args.dev_ratio <= 0 or args.dev_ratio >= 1:
-            raise ValueError("dev ratio should be in (0, 1)")
-        if args.test_ratio <= 0 or args.test_ratio >= 1:
-            raise ValueError("test ratio should be in (0, 1)")
+        if args.dev_split <= 0 or args.dev_split >= 1:
+            raise ValueError("dev split ratio should be in (0, 1)")
+        if args.test_split <= 0 or args.test_split >= 1:
+            raise ValueError("test split ratio should be in (0, 1)")
         if args.input_len <= 0:
             raise ValueError("input length must > 0")
         if args.target_len <= 0:
@@ -124,13 +129,25 @@ else:
         if args.session_interval < 0:
             raise ValueError("session interval must >= 0 minutes")
         if args.dataset in processed_datasets:
+            time_splits = {}
             for c in processed_datasets[args.dataset]:
                 config = read_json(
                     __warehouse__.joinpath(args.dataset, "processed", c, "config.json")
                 )
-                if all([args.__dict__[k] == v for k, v in config.items()]):
+                if args.split_by == "user" and all(
+                    [args.__dict__[k] == v for k, v in config.items()]
+                ):
                     print("You have run this config, the config id is: {}".format(c))
                     sys.exit(1)
+                if args.split_by == "time" and all(
+                    [
+                        args.__dict__[k] == v
+                        for k, v in config.items()
+                        if k not in ["dev_split", "test_split"]
+                    ]
+                ):
+                    time_splits[(config["dev_split"], config["test_split"])] = c
+            args.time_splits = time_splits
         _process(args)
     else:
         if args.dataset is None:
