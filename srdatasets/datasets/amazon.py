@@ -1,13 +1,7 @@
-import logging
-import os
-from datetime import datetime
-
 import pandas as pd
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import download_url
-
-logger = logging.getLogger(__name__)
 
 
 class Amazon(Dataset):
@@ -42,14 +36,10 @@ class Amazon(Dataset):
     url_prefix = "http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/"
 
     def download(self, category) -> None:
-        filepath = self.home.joinpath(self.__corefile__[category])
-        try:
-            download_url(self.url_prefix + self.__corefile__[category], filepath)
-            logger.info("Finished, dataset location: %s", self.home)
-        except:
-            logger.exception("Download failed, please try again")
-            if filepath.exists():
-                os.remove(filepath)
+        download_url(
+            self.url_prefix + self.__corefile__[category],
+            self.home.joinpath(self.__corefile__[category]),
+        )
 
     def transform(self, category, rating_threshold) -> pd.DataFrame:
         """ Records with rating less than `rating_threshold` are dropped

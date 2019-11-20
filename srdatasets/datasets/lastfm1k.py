@@ -1,14 +1,10 @@
-import logging
 import os
-import tarfile
 from datetime import datetime
 
 import pandas as pd
 
 from srdatasets.datasets.dataset import Dataset
-from srdatasets.datasets.utils import download_url
-
-logger = logging.getLogger(__name__)
+from srdatasets.datasets.utils import download_url, extract
 
 
 class Lastfm1K(Dataset):
@@ -20,19 +16,8 @@ class Lastfm1K(Dataset):
 
     def download(self) -> None:
         filepath = self.home.joinpath("lastfm-dataset-1K.tar.gz")
-        try:
-            download_url(self.__url__, filepath)
-            logger.info("Download successful, unzipping...")
-        except:
-            logger.exception("Download failed, please try again")
-            if filepath.exists():
-                os.remove(filepath)
-            return
-
-        with tarfile.open(filepath) as tar:
-            tar.extractall(self.home)
-
-        logger.info("Finished, dataset location: %s", self.home)
+        download_url(self.__url__, filepath)
+        extract(filepath, self.home)
 
     def transform(self, item_type) -> pd.DataFrame:
         """ item_type can be `artist` or `song`

@@ -1,15 +1,9 @@
-import gzip
-import logging
-import os
-import shutil
 from datetime import datetime
 
 import pandas as pd
 
 from srdatasets.datasets.dataset import Dataset
-from srdatasets.datasets.utils import download_url
-
-logger = logging.getLogger(__name__)
+from srdatasets.datasets.utils import download_url, extract
 
 
 class Gowalla(Dataset):
@@ -19,22 +13,8 @@ class Gowalla(Dataset):
 
     def download(self) -> None:
         filepath = self.home.joinpath("loc-gowalla_totalCheckins.txt.gz")
-        try:
-            download_url(self.__url__, filepath)
-            logger.info("Download successful, unzipping...")
-        except:
-            logger.exception("Download failed, please try again")
-            if filepath.exists():
-                os.remove(filepath)
-            return
-
-        with gzip.open(filepath, "rb") as f_in:
-            with open(
-                self.home.joinpath("loc-gowalla_totalCheckins.txt"), "w"
-            ) as f_out:
-                shutil.copyfileobj(f_in, f_out)
-
-        logger.info("Finished, dataset location: %s", self.home)
+        download_url(self.__url__, filepath)
+        extract(filepath, self.home.joinpath("loc-gowalla_totalCheckins.txt"))
 
     def transform(self) -> pd.DataFrame:
         """ Time: yyyy-mm-ddThh:mm:ssZ -> timestamp """

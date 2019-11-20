@@ -1,14 +1,9 @@
-import logging
 import os
-import shutil
-from zipfile import ZipFile
 
 import pandas as pd
 
 from srdatasets.datasets.dataset import Dataset
-from srdatasets.datasets.utils import download_url
-
-logger = logging.getLogger(__name__)
+from srdatasets.datasets.utils import download_url, extract
 
 
 class MovieLens20M(Dataset):
@@ -18,19 +13,8 @@ class MovieLens20M(Dataset):
 
     def download(self) -> None:
         filepath = self.home.joinpath("ml-20m.zip")
-        try:
-            download_url(self.__url__, filepath)
-            logger.info("Download successful, unzippping...")
-        except:
-            logger.exception("Download failed, please retry")
-            if filepath.exists():
-                os.remove(filepath)
-            return
-
-        with ZipFile(filepath) as zipObj:
-            zipObj.extractall(self.home)
-
-        logger.info("Finished, dataset location: %s", self.home)
+        download_url(self.__url__, filepath)
+        extract(filepath, self.home)
 
     def transform(self, rating_threshold) -> pd.DataFrame:
         """ Records with rating less than `rating_threshold` are dropped

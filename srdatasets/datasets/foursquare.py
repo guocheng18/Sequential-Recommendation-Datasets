@@ -1,14 +1,10 @@
-import logging
 import os
 from datetime import datetime
-from zipfile import ZipFile
 
 import pandas as pd
 
 from srdatasets.datasets.dataset import Dataset
-from srdatasets.datasets.utils import download_url
-
-logger = logging.getLogger(__name__)
+from srdatasets.datasets.utils import download_url, extract
 
 
 class FourSquare(Dataset):
@@ -22,19 +18,8 @@ class FourSquare(Dataset):
 
     def download(self) -> None:
         filepath = self.home.joinpath("dataset_tsmc2014.zip")
-        try:
-            download_url(self.__url__, filepath)
-            logger.info("Download successful, unzipping...")
-        except:
-            logger.exception("Download failed, please try again")
-            if filepath.exists():
-                os.remove(filepath)
-            return
-
-        with ZipFile(filepath) as zipObj:
-            zipObj.extractall(self.home)
-
-        logger.info("Finished, dataset location: %s", self.home)
+        download_url(self.__url__, filepath)
+        extract(filepath, self.home)
 
     def transform(self, city) -> pd.DataFrame:
         """ city: `NYC` or `Tokyo`
