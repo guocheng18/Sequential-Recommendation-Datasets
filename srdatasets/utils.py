@@ -25,7 +25,7 @@ def get_processed_datasets():
         if d.joinpath("processed").exists():
             configs = []
             for c in d.joinpath("processed").iterdir():  # loop configs
-                if all([c.joinpath(p).exists() for p in P]):
+                if all(c.joinpath(p).exists() for p in P):
                     configs.append(c.stem)
             if configs:
                 D[d.stem] = configs
@@ -41,8 +41,12 @@ def get_downloaded_datasets():
             corefile = dataset_classes[d.split("-")[0]].__corefile__[d.split("-")[1]]
         else:
             corefile = dataset_classes[d].__corefile__
-        if __warehouse__.joinpath(d, "raw", corefile).exists():
-            D.append(d)
+        if isinstance(corefile, list):
+            if all(__warehouse__.joinpath(d, "raw", cf).exists() for cf in corefile):
+                D.append(d)
+        else:
+            if __warehouse__.joinpath(d, "raw", corefile).exists():
+                D.append(d)
     return D
 
 

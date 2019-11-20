@@ -8,10 +8,14 @@ This repo simplifies how sequential recommendation datasets are used.
 Name | Item | Website
 ---- | ---- | -------
 Amazon-[category] | Product| http://jmcauley.ucsd.edu/data/amazon/
+CiteULike | Tag | http://konect.cc/networks/citeulike-ut/
 FourSquare-[city] | Location| https://sites.google.com/site/yangdingqi/home/foursquare-dataset
 Gowalla | Location | https://snap.stanford.edu/data/loc-Gowalla.html
 Lastfm1K | Artist or Music | http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
 MovieLens20M | Movie | https://grouplens.org/datasets/movielens/
+TaFeng | Product | https://stackoverflow.com/questions/25014904/download-link-%20for-ta-feng-grocery-dataset
+Taobao | Product | https://tianchi.aliyun.com/dataset/dataDetail?dataId=649
+Tmall | Product | https://tianchi.aliyun.com/dataset/dataDetail?dataId=47
 Yelp | Business | https://www.yelp.com/dataset
 
 ### NOTE

@@ -114,6 +114,8 @@ else:
             raise ValueError("{} has been downloaded".format(args.dataset))
         _download(args.dataset)
     elif args.command == "process":
+        if args.dataset not in __datasets__:
+            raise ValueError("Supported datasets: {}".format(", ".join(__datasets__)))
         if args.dataset not in downloaded_datasets:
             raise ValueError("{} has not been downloaded".format(args.dataset))
         if args.dev_split <= 0 or args.dev_split >= 1:
