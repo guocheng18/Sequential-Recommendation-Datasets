@@ -2,9 +2,12 @@ import os
 from datetime import datetime
 
 import pandas as pd
+from tqdm import tqdm
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import download_url, extract
+
+tqdm.pandas()
 
 
 class Lastfm1K(Dataset):
@@ -33,11 +36,9 @@ class Lastfm1K(Dataset):
                 "song_name",
             ],
             usecols=[0, 1, 2, 4],
-            converters={
-                "timestamp": lambda x: int(
-                    datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ").timestamp()
-                )
-            },
+        )
+        df["timestamp"] = df["timestamp"].progress_apply(
+            lambda x: int(datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ").timestamp())
         )
         if item_type == "song":
             df = df.drop("artist_id", axis=1).rename(columns={"song_id": "item_id"})

@@ -3,9 +3,12 @@ import os
 from datetime import datetime
 
 import pandas as pd
+from tqdm import tqdm
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import extract
+
+tqdm.pandas()
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +32,10 @@ class Tmall(Dataset):
             header=0,
             index_col=False,
             usecols=[0, 1, 5],
-            converters={
-                "time_stamp": lambda x: int(
-                    datetime.strftime("2015" + x, "%Y%m%d").timestamp()
-                )
-            },
+            dtype={"time_stamp": str},
+        )
+        df["time_stamp"] = df["time_stamp"].progress_apply(
+            lambda x: int(datetime.strptime("2015" + x, "%Y%m%d").timestamp())
         )
         df = df.rename(columns={"time_stamp": "timestamp"})
         return df

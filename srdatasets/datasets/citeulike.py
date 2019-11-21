@@ -2,9 +2,12 @@ import os
 from datetime import datetime
 
 import pandas as pd
+from tqdm import tqdm
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import download_url, extract
+
+tqdm.pandas()
 
 
 class CiteULike(Dataset):
@@ -26,6 +29,6 @@ class CiteULike(Dataset):
             usecols=[0, 1, 3],
             comment="%",
         )
-        df["timestamp"] = df["timestamp"].apply(int)
+        df["timestamp"] = df["timestamp"].progress_apply(int)
         df = df.rename(columns={"tag_id": "item_id"})
         return df

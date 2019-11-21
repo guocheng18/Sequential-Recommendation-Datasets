@@ -2,9 +2,12 @@ import os
 from datetime import datetime
 
 import pandas as pd
+from tqdm import tqdm
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import download_url, extract
+
+tqdm.pandas()
 
 
 class FourSquare(Dataset):
@@ -38,11 +41,9 @@ class FourSquare(Dataset):
                 "utc_time",
             ],
             usecols=[0, 1, 7],
-            converters={
-                "utc_time": lambda x: int(
-                    datetime.strptime(x, "%a %b %d %H:%M:%S %z %Y").timestamp()
-                )
-            },
+        )
+        df["utc_time"] = df["utc_time"].progress_apply(
+            lambda x: int(datetime.strptime(x, "%a %b %d %H:%M:%S %z %Y").timestamp())
         )
         df = df.rename(columns={"venue_id": "item_id", "utc_time": "timestamp"})
         return df

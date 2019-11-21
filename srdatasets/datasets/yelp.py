@@ -2,9 +2,12 @@ import logging
 from datetime import datetime
 
 import pandas as pd
+from tqdm import tqdm
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import extract
+
+tqdm.pandas()
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ class Yelp(Dataset):
             self.rootdir.joinpath(self.__corefile__), orient="records", lines=True
         )
         df = df[["user_id", "business_id", "stars", "date"]]
-        df["date"] = df["date"].map(
+        df["date"] = df["date"].progress_apply(
             lambda x: int(datetime.strptime(x, "%Y-%m-%d").timestamp())
         )
         df = df[df["stars"] >= stars_threshold].drop("stars", axis=1)

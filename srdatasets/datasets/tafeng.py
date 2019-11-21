@@ -2,9 +2,12 @@ import os
 from datetime import datetime
 
 import pandas as pd
+from tqdm import tqdm
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import download_url, extract
+
+tqm.pandas()
 
 
 class TaFeng(Dataset):
@@ -37,11 +40,9 @@ class TaFeng(Dataset):
                 ],
                 usecols=[0, 1, 5],
                 encoding="big5",
-                converters={
-                    "timestamp": lambda x: int(
-                        datetime.strptime(x, "%Y-%m-%d %H:%M:%S").timestamp()
-                    )
-                },
+            )
+            df["timestamp"] = df["timestamp"].progress_apply(
+                lambda x: int(datetime.strptime(x, "%Y-%m-%d %H:%M:%S").timestamp())
             )
             dfs.append(df)
         return pd.concat(dfs, ignore_index=True)
