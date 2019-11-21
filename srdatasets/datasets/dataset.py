@@ -1,24 +1,31 @@
-from pathlib import Path
+import os
+from abc import ABC, abstractmethod
+from urllib.parse import urlparse
 
-from pandas import DataFrame
 
-
-class Dataset(object):
-    """ Base class of datasets, each dataset should inherit `download`
-     (implementation of downloading raw datasets) and `transform` method 
-     (transforming raw data format to general data format)
+class Dataset(ABC):
+    """ Base dataset of SR datasets
     """
 
-    def __init__(self, home: Path):
-        """ `home` is local path of the raw dataset """
-        self.home = home
+    def __init__(self, rootdir):
+        """ `rootdir` is the directory of the raw dataset """
+        self.rootdir = rootdir
 
-    def download(self) -> None:
-        """ Download and extract raw dataset files """
-        raise NotImplementedError
+    @property
+    def rawpath(self):
+        if hasattr(self, "__url__"):
+            return self.rootdir.joinpath(os.path.basename(urlparse(self.__url__).path))
+        else:
+            return ""
 
-    def transform(self, *args) -> DataFrame:
+    @abstractmethod
+    def download(self):
+        """ Download and extract the raw dataset """
+        pass
+
+    @abstractmethod
+    def transform(self):
         """ Transform to the general data format, which is
         a pd.DataFrame instance that contains three columns: [user_id, item_id, timestamp]
         """
-        raise NotImplementedError
+        pass

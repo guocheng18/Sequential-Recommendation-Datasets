@@ -16,16 +16,15 @@ class FourSquare(Dataset):
         "Tokyo": os.path.join("dataset_tsmc2014", "dataset_TSMC2014_TKY.txt"),
     }
 
-    def download(self) -> None:
-        filepath = self.home.joinpath("dataset_tsmc2014.zip")
-        download_url(self.__url__, filepath)
-        extract(filepath, self.home)
+    def download(self):
+        download_url(self.__url__, self.rawpath)
+        extract(self.rawpath, self.rootdir)
 
-    def transform(self, city) -> pd.DataFrame:
+    def transform(self, city):
         """ city: `NYC` or `Tokyo`
         """
         df = pd.read_csv(
-            self.home.joinpath(self.__corefile__[city]),
+            self.rootdir.joinpath(self.__corefile__[city]),
             sep="\t",
             header=None,
             names=[

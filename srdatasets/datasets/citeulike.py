@@ -12,14 +12,13 @@ class CiteULike(Dataset):
     __url__ = "http://konect.cc/files/download.tsv.citeulike-ut.tar.bz2"
     __corefile__ = os.path.join("citeulike-ut", "out.citeulike-ut")
 
-    def download(self) -> None:
-        filepath = self.home.joinpath("download.tsv.citeulike-ut.tar.bz2")
-        download_url(self.__url__, filepath)
-        extract(filepath, self.home)
+    def download(self):
+        download_url(self.__url__, self.rawpath)
+        extract(self.rawpath, self.rootdir)
 
-    def transform(self) -> pd.DataFrame:
+    def transform(self):
         df = pd.read_csv(
-            self.home.joinpath(self.__corefile__),
+            self.rootdir.joinpath(self.__corefile__),
             sep=" ",
             header=None,
             index_col=False,

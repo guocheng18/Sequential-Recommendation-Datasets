@@ -11,16 +11,15 @@ class MovieLens20M(Dataset):
     __url__ = "http://files.grouplens.org/datasets/movielens/ml-20m.zip"
     __corefile__ = os.path.join("ml-20m", "ratings.csv")
 
-    def download(self) -> None:
-        filepath = self.home.joinpath("ml-20m.zip")
-        download_url(self.__url__, filepath)
-        extract(filepath, self.home)
+    def download(self):
+        download_url(self.__url__, self.rawpath)
+        extract(self.rawpath, self.rootdir)
 
-    def transform(self, rating_threshold) -> pd.DataFrame:
+    def transform(self, rating_threshold):
         """ Records with rating less than `rating_threshold` are dropped
         """
         df = pd.read_csv(
-            self.home.joinpath(self.__corefile__),
+            self.rootdir.joinpath(self.__corefile__),
             header=0,
             names=["user_id", "movie_id", "rating", "timestamp"],
         )

@@ -14,16 +14,15 @@ class Lastfm1K(Dataset):
         "lastfm-dataset-1K", "userid-timestamp-artid-artname-traid-traname.tsv"
     )
 
-    def download(self) -> None:
-        filepath = self.home.joinpath("lastfm-dataset-1K.tar.gz")
-        download_url(self.__url__, filepath)
-        extract(filepath, self.home)
+    def download(self):
+        download_url(self.__url__, self.rawpath)
+        extract(self.rawpath, self.rootdir)
 
-    def transform(self, item_type) -> pd.DataFrame:
+    def transform(self, item_type):
         """ item_type can be `artist` or `song`
         """
         df = pd.read_csv(
-            self.home.joinpath(self.__corefile__),
+            self.rootdir.joinpath(self.__corefile__),
             sep="\t",
             names=[
                 "user_id",

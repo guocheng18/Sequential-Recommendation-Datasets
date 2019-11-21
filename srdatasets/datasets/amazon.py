@@ -35,19 +35,19 @@ class Amazon(Dataset):
 
     url_prefix = "http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/"
 
-    def download(self, category) -> None:
+    def download(self, category):
         download_url(
             self.url_prefix + self.__corefile__[category],
-            self.home.joinpath(self.__corefile__[category]),
+            self.rootdir.joinpath(self.__corefile__[category]),
         )
 
-    def transform(self, category, rating_threshold) -> pd.DataFrame:
+    def transform(self, category, rating_threshold):
         """ Records with rating less than `rating_threshold` are dropped
         """
         df = pd.read_csv(
-            self.home.joinpath(self.__corefile__[category]),
+            self.rootdir.joinpath(self.__corefile__[category]),
             header=None,
             names=["user_id", "item_id", "rating", "timestamp"],
         )
-        df = df[df.rating >= rating_threshold].drop("rating", axis=1)
+        df = df[df["rating"] >= rating_threshold].drop("rating", axis=1)
         return df
