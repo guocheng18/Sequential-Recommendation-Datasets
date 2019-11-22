@@ -7,7 +7,7 @@ from tqdm import tqdm
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import download_url, extract
 
-tqm.pandas()
+tqdm.pandas()
 
 
 class TaFeng(Dataset):
