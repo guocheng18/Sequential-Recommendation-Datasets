@@ -40,20 +40,42 @@ parser_g = subparsers.add_parser(
 )
 parser_g.add_argument("--dataset", type=str, required=True, help="dataset name")
 parser_g.add_argument(
-    "--dev-split", type=float, default=0.1, help="the fraction of developemnt dataset"
-)
-parser_g.add_argument(
-    "--test-split", type=float, default=0.2, help="the fraction of test dataset"
-)
-parser_g.add_argument(
     "--min-freq-item", type=int, default=5, help="minimum occurrence times of item"
 )
 parser_g.add_argument(
     "--min-freq-user", type=int, default=5, help="minimum occurrence times of user"
 )
-parser_g.add_argument("--input-len", type=int, default=5, help="input sequence length")
 parser_g.add_argument(
-    "--target-len", type=int, default=3, help="target sequence length"
+    "--task",
+    type=str,
+    choices=["short", "long-short"],
+    default="short",
+    help="short-term task or long-short-term task",
+)
+parser_g.add_argument(
+    "--split-by",
+    type=str,
+    choices=["user", "time"],
+    default="user",
+    help="user-based or time-based dataset splitting",
+)
+parser_g.add_argument(
+    "--dev-split",
+    type=float,
+    default=0.1,
+    help="[user-split] the fraction of developemnt dataset",
+)
+parser_g.add_argument(
+    "--test-split",
+    type=float,
+    default=0.2,
+    help="[user-split] the fraction of test dataset",
+)
+parser_g.add_argument(
+    "--input-len", type=int, default=5, help="[short] input sequence length"
+)
+parser_g.add_argument(
+    "--target-len", type=int, default=1, help="target sequence length"
 )
 parser_g.add_argument(
     "--no-augment", action="store_true", help="do not use data augmentation"
@@ -67,14 +89,26 @@ parser_g.add_argument(
     "--session-interval",
     type=int,
     default=0,
-    help="split user sequences into sessions (minutes)",
+    help="[short-optional, long-short-required] split user sequences into sessions (minutes)",
 )
 parser_g.add_argument(
-    "--split-by",
+    "--max-session-len", type=int, default=20, help="max session length"
+)
+parser_g.add_argument(
+    "--min-session-len", type=int, default=2, help="min session length"
+)
+parser_g.add_argument(
+    "--pre-sessions",
+    type=int,
+    default=10,
+    help="[long-short] number of previous sessions",
+)
+parser_g.add_argument(
+    "--pick-targets",
     type=str,
-    choices=["user", "time"],
-    default="user",
-    help="user-based or time-based dataset splitting",
+    choices=["last", "random"],
+    default="last",
+    help="[long-short] pick T random or last items from current session as targets",
 )
 parser_g.add_argument(
     "--rating-threshold",
@@ -118,19 +152,35 @@ else:
             raise ValueError("Supported datasets: {}".format(", ".join(__datasets__)))
         if args.dataset not in downloaded_datasets:
             raise ValueError("{} has not been downloaded".format(args.dataset))
-        if args.dev_split <= 0 or args.dev_split >= 1:
-            raise ValueError("dev split ratio should be in (0, 1)")
-        if args.test_split <= 0 or args.test_split >= 1:
-            raise ValueError("test split ratio should be in (0, 1)")
-        if args.input_len <= 0:
-            raise ValueError("input length must > 0")
+
+        if args.split_by == "user":
+            if args.dev_split <= 0 or args.dev_split >= 1:
+                raise ValueError("dev split ratio should be in (0, 1)")
+            if args.test_split <= 0 or args.test_split >= 1:
+                raise ValueError("test split ratio should be in (0, 1)")
+
+        if args.task == "short":
+            if args.input_len <= 0:
+                raise ValueError("input length must > 0")
+            if args.session_interval < 0:
+                raise ValueError("session interval must >= 0 minutes")
+        else:
+            if args.session_interval <= 0:
+                raise ValueError("session interval must > 0 minutes")
+            if args.pre_sessions < 1:
+                raise ValueError("number of previous sessions must > 0")
+
         if args.target_len <= 0:
             raise ValueError("target length must > 0")
-        if args.min_freq_user <= args.target_len:
-            raise ValueError("min_freq_user should be greater than target_len")
-        if args.session_interval < 0:
-            raise ValueError("session interval must >= 0 minutes")
+
+        if args.session_interval > 0:
+            if args.min_session_len <= args.target_len:
+                raise ValueError("min session length must > target length")
+            if args.max_session_len < args.min_session_len:
+                raise ValueError("max session length must >= min session length")
+
         if args.dataset in processed_datasets:
+            # TODO Improve processed check when some arguments are not used
             time_splits = {}
             for c in processed_datasets[args.dataset]:
                 config = read_json(

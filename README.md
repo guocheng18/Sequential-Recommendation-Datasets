@@ -1,36 +1,32 @@
 # Sequential Recommendation Datasets
-This repo simplifies how sequential recommendation datasets are used.
-<p>
-    <img src="https://img.shields.io/badge/pypi package-v0.0.1-brightgreen?style=flat-square"/>
-</p>
+
+Provide a tool for help dealing with some common sequential recommendation datasets
+
+[![name](https://img.shields.io/badge/pypi_package-v0.0.1-blue?style=flat-square&logo=pypi)](https://pypi.org/)
 
 ## Datasets
-Name | Item | Website
----- | ---- | -------
-Amazon-[category] | Product| http://jmcauley.ucsd.edu/data/amazon/
+
+Name | ItemType | Website
+---- | -------- | -------
+Amazon | Product| http://jmcauley.ucsd.edu/data/amazon/
 CiteULike | Tag | http://konect.cc/networks/citeulike-ut/
-FourSquare-[city] | Location| https://sites.google.com/site/yangdingqi/home/foursquare-dataset
+FourSquare | Location | https://sites.google.com/site/yangdingqi/home/foursquare-dataset
 Gowalla | Location | https://snap.stanford.edu/data/loc-Gowalla.html
 Lastfm1K | Artist or Music | http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
 MovieLens20M | Movie | https://grouplens.org/datasets/movielens/
-TaFeng | Product | https://stackoverflow.com/questions/25014904/download-link-%20for-ta-feng-grocery-dataset
+TaFeng | Product | https://stackoverflow.com/a/25460645/8810037
 Taobao | Product | https://tianchi.aliyun.com/dataset/dataDetail?dataId=649
 Tmall | Product | https://tianchi.aliyun.com/dataset/dataDetail?dataId=47
 Yelp | Business | https://www.yelp.com/dataset
 
-### NOTE
-- Amazon categories: Books, Electronics, Movies, CDs, Clothing, Home, Kindle, Sports, Phones, Health, Toys, VideoGames, Tools, Beauty, Apps, Office, Pet, Automotive, Grocery, Patio, Baby, Music, MusicalInstruments, InstantVideo
-- FourSquare cities: NYC, Tokyo
+## Install
 
-## Installation
-Install from pypi:
-```
-pip install srdatasets
-```
-Or from Github for the latest version:
-```
-pip install git+https://github.com/guocheng2018/sequential-recommendation-datasets.git
-```
+
+## Download datasets
+
+
+## Process datasets
+
 
 ## Usage
 
@@ -75,11 +71,6 @@ for epoch in range(10):
     for user_ids, input_item_ids, target_item_ids in testloader:
         ...
 ```
-
-## TODO
-- [ ] More datasets
-- [ ] Support Custom datasets
-
 
 ## Disclaimers
 The datasets have their own licenses, this repo (under MIT license) only provides an way to use them.

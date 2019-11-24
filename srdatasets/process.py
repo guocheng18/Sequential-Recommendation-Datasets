@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import pickle
+import random
 import sys
 import time
 from datetime import datetime
@@ -33,9 +34,14 @@ def _process(args):
         "no_augment": args.no_augment,
         "remove_duplicates": args.remove_duplicates,
         "session_interval": args.session_interval,
+        "min_session_len": args.min_session_len,
+        "max_session_len": args.max_session_len,
         "split_by": args.split_by,
         "dev_split": args.dev_split,
         "test_split": args.test_split,
+        "task": args.task,
+        "pre_sessions": args.pre_sessions,
+        "pick_targets": args.pick_targets,
     }
     if classname in ["Amazon", "MovieLens20M", "Yelp"]:
         config["rating_threshold"] = args.rating_threshold
@@ -131,7 +137,12 @@ def preprocess_and_save(df, dname, config):
             for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
         ]
 
-    # Make datasets
+    # Make datasets based on task
+    if config["task"] == "short":
+        make_dataset = make_dataset_short
+    else:
+        make_dataset = make_dataset_long_short
+
     logger.info("Making datasets...")
     train_data, test_data, dev_train_data, dev_test_data = [
         make_dataset(seqs, config)
@@ -209,13 +220,15 @@ def generate_sequences(df, config):
                     seq_buffer.append((item_id, timestamp))
                 else:
                     if timestamp - seq[i - 1][1] > config["session_interval"] * 60:
-                        if len(seq_buffer) > config["target_len"]:
-                            _seqs.append((user_id, seq_buffer))
+                        if len(seq_buffer) >= config["min_session_len"]:
+                            _seqs.append(
+                                (user_id, seq_buffer[-config["max_session_len"] :])
+                            )
                         seq_buffer = [(item_id, timestamp)]
                     else:
                         seq_buffer.append((item_id, timestamp))
-            if len(seq_buffer) > config["target_len"]:
-                _seqs.append((user_id, seq_buffer))
+            if len(seq_buffer) >= config["min_session_len"]:
+                _seqs.append((user_id, seq_buffer[-config["max_session_len"] :]))
         seqs = _seqs
     return seqs
 
@@ -298,8 +311,12 @@ def remove_new_items(train_seqs, test_seqs, config):
     test_seqs_ = []
     for user_id, seq in tqdm(test_seqs):
         seq_ = [(i, t) for i, t in seq if i in items]
-        if len(seq_) > config["target_len"]:
-            test_seqs_.append((user_id, seq_))
+        if config["session_interval"] > 0:
+            if len(seq_) >= config["min_session_len"]:
+                test_seqs_.append((user_id, seq_))
+        else:
+            if len(seq_) > config["target_len"]:
+                test_seqs_.append((user_id, seq_))
     return test_seqs_
 
 
@@ -314,12 +331,82 @@ def remove_duplicates(user_seq, config):
             if item not in shown_items:
                 shown_items.add(item)
                 seq_.append((item, timestamp))
-        if len(seq_) > config["target_len"]:
-            user_seq_.append((user_id, seq_))
+        if config["session_interval"] > 0:
+            if len(seq_) >= config["min_session_len"]:
+                user_seq_.append((user_id, seq_))
+        else:
+            if len(seq_) > config["target_len"]:
+                user_seq_.append((user_id, seq_))
     return user_seq_
 
 
-def make_dataset(user_seq, config):
+def make_targets(seq, config):
+    """ cur_session with timestamps, targets no """
+    pass
+
+
+def make_dataset_long_short(user_seq, config):
+    dataset = []
+    user_sessions = []
+    for i, (user_id, seq) in tqdm(enumerate(user_seq), total=len(user_seq)):
+        if i == 0:
+            user_sessions.append((user_id, seq))
+        else:
+            if user_id == user_seq[i - 1][0]:
+                user_sessions.append((user_id, seq))
+            else:
+                if len(user_sessions) > 1:
+                    d = len(user_sessions) - 1 - config["pre_sessions"]
+                    if d <= 0:
+                        pre_sessions = [(-1, -1)] * config["max_session_len"] * (-d)
+                        for s in user_sessions[:-1]:
+                            pre_sessions += [(-1, -1)] * (
+                                config["max_session_len"] - len(s[1])
+                            ) + s[1]
+                        cur_session, targets = make_targets(user_sessions[-1])
+                        dataset.append(
+                            (user_sessions[-1][0], pre_sessions, cur_session, targets)
+                        )
+                    else:
+                        if config["no_augment"]:
+                            pre_sessions = []
+                            for s in user_sessions[-config["pre_sessions"] - 1 : -1]:
+                                pre_sessions += [(-1, -1)] * (
+                                    config["max_session_len"] - len(s[1])
+                                ) + s[1]
+                            cur_session, targets = make_targets(user_sessions[-1])
+                            dataset.append(
+                                (
+                                    user_sessions[-1][0],
+                                    pre_sessions,
+                                    cur_session,
+                                    targets,
+                                )
+                            )
+                        else:
+                            for i in range(d):
+                                pre_sessions = []
+                                for s in user_sessions[i : i + config["pre_sessions"]]:
+                                    pre_sessions += [(-1, -1)] * (
+                                        config["max_session_len"] - len(s[1])
+                                    ) + s[1]
+                                cur_session, targets = make_targets(
+                                    user_sessions[i + config["pre_sessions"]]
+                                )
+                                dataset.append(
+                                    (
+                                        user_sessions[-1][0],
+                                        pre_sessions,
+                                        cur_session,
+                                        targets,
+                                    )
+                                )
+                user_sessions = [(user_id, seq)]
+        # Handle last user, method, collect user sessions first
+    return dataset
+
+
+def make_dataset_short(user_seq, config):
     input_len = config["input_len"]
     target_len = config["target_len"]
     dataset = []
@@ -417,4 +504,4 @@ def dump(path, train_data, test_data, mode):
         json.dump(stats, f)
 
 
-# ====== API for custom dataset ====== #
+# ====== TODO API for custom dataset ====== #
