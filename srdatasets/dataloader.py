@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class DataLoader:
 
+    _datasets_lowercase = {d.lower(): d for d in __datasets__}
     _processed_datasets = get_processed_datasets()
 
     def __init__(
@@ -43,6 +44,8 @@ class DataLoader:
         
         Note: training data is shuffled automatically.
         """
+        dataset_name = self._datasets_lowercase.get(dataset_name.lower(), dataset_name)
+
         if dataset_name not in __datasets__:
             raise ValueError(
                 "Unrecognized dataset, currently supported datasets: {}".format(
@@ -90,9 +93,14 @@ class DataLoader:
 
         if train:
             counter = Counter()
-            for _, input_items, target_items, _, _ in self.dataset:
-                counter.update(input_items + target_items)
-            self.item_counts = np.array([counter[i] for i in range(len(counter))])
+            for data in self.dataset:
+                if len(data) > 5:
+                    self.item_counts.update(data[1] + data[2] + data[3])
+                else:
+                    self.item_counts.update(data[1] + data[2])
+            self.item_counts = np.array(
+                [counter[i] for i in range(max(counter.keys()) + 1)]
+            )
 
         if batch_size <= 0:
             raise ValueError("batch_size should >= 1")
@@ -156,8 +164,12 @@ class DataLoader:
             ]
             self._batch_idx += 1
             batch_data = [np.array(b) for b in zip(*batch)]
+            # TODO
             if not self.include_timestamp:
-                batch_data = batch_data[:3]
+                if len(batch_data) > 5:
+                    batch_data = batch_data[:4]
+                else:
+                    batch_data = batch_data[:3]
             # Sampling negatives
             if self.train and self.negatives_per_target > 0:
                 negatives = self.sample_negatives(batch_data[1], batch_data[2])

@@ -28,43 +28,44 @@ class Dataset(torch.utils.data.Dataset):
             raise ValueError("{} does not exist!".format(datapath))
         if train:
             self.item_counts = Counter()
-            for _, input_items, target_items, _, _ in self.dataset:
-                self.item_counts.update(input_items + target_items)
+            for data in self.dataset:
+                if len(data) > 5:
+                    self.item_counts.update(data[1] + data[2] + data[3])
+                else:
+                    self.item_counts.update(data[1] + data[2])
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        return (
-            torch.tensor(self.dataset[idx][0], dtype=torch.long),
-            torch.tensor(self.dataset[idx][1], dtype=torch.long),
-            torch.tensor(self.dataset[idx][2], dtype=torch.long),
-            torch.tensor(self.dataset[idx][3], dtype=torch.float),  # timestamps
-            torch.tensor(self.dataset[idx][4], dtype=torch.float),
-        )
+        return tuple(map(torch.tensor, self.dataset[idx]))
 
 
 class DataLoader(torch.utils.data.DataLoader):
 
+    _datasets_lowercase = {d.lower(): d for d in __datasets__}
     _processed_datasets = get_processed_datasets()
 
     def collate_fn(self, batch):
         """ Negative sampling and Timestamps removal or adding
         """
+        target_pos = 3 if len(batch[0]) > 5 else 2
+
         batch_data = list(zip(*batch))
         if self.include_timestamp:
             batch_data = list(map(torch.stack, batch_data))
         else:
-            batch_data = list(map(torch.stack, batch_data[:3]))
+            batch_data = list(map(torch.stack, batch_data[: target_pos + 1]))
 
         if self.train and self.negatives_per_target > 0:
             batch_item_counts = self.item_counts.repeat(len(batch), 1).scatter(
-                1, torch.cat((batch_data[1], batch_data[2]), 1), 0
+                1, torch.cat(batch_data[1 : target_pos + 1], 1), 0
             )
             # Prevent padding item 0 from being negative samples
             batch_item_counts[:, 0] = 0
             negatives = torch.multinomial(
-                batch_item_counts, self.negatives_per_target * batch_data[2].size(1)
+                batch_item_counts,
+                self.negatives_per_target * batch_data[target_pos].size(1),
             )
             negatives = negatives.view(len(batch), -1, self.negatives_per_target)
             batch_data.append(negatives)
@@ -94,6 +95,8 @@ class DataLoader(torch.utils.data.DataLoader):
         
         Note: training data is shuffled automatically.
         """
+        dataset_name = self._datasets_lowercase.get(dataset_name.lower(), dataset_name)
+
         if dataset_name not in __datasets__:
             raise ValueError(
                 "Unrecognized dataset, currently supported datasets: {}".format(
@@ -136,7 +139,10 @@ class DataLoader(torch.utils.data.DataLoader):
         _dataset = Dataset(dataset_name, config_id, train, development)
         if train:
             self.item_counts = torch.tensor(
-                [_dataset.item_counts[i] for i in range(len(_dataset.item_counts))],
+                [
+                    _dataset.item_counts[i]
+                    for i in range(max(_dataset.item_counts.keys()) + 1)
+                ],
                 dtype=torch.float,
             )
 
