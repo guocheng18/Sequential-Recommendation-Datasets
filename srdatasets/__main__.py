@@ -231,7 +231,6 @@ else:
                 if args.dataset not in processed_datasets:
                     print("{} has not been processed".format(args.dataset))
                 else:
-                    print("Configs")
                     configs = json_normalize(
                         [
                             read_json(
@@ -242,10 +241,30 @@ else:
                             for c in processed_datasets[args.dataset]
                         ]
                     )
-                    configs.insert(0, "config id", processed_datasets[args.dataset])
+                    print("Configs part1")
+                    configs_part1 = configs.iloc[:, :8]
+                    configs_part1.insert(
+                        0, "config id", processed_datasets[args.dataset]
+                    )
                     print(
                         tabulate(
-                            configs, headers="keys", showindex=False, tablefmt="psql"
+                            configs_part1,
+                            headers="keys",
+                            showindex=False,
+                            tablefmt="psql",
+                        )
+                    )
+                    print("\nConfigs part2")
+                    configs_part2 = configs.iloc[:, 8:]
+                    configs_part2.insert(
+                        0, "config id", processed_datasets[args.dataset]
+                    )
+                    print(
+                        tabulate(
+                            configs_part2,
+                            headers="keys",
+                            showindex=False,
+                            tablefmt="psql",
                         )
                     )
                     print("\nStats")
