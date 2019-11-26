@@ -5,14 +5,14 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="srdatasets",
-    version="0.0.1",
+    version="0.0.2",
     author="Cheng Guo",
     author_email="guocheng672@gmail.com",
     description="A collection of research ready datasets for sequential recommendation",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/guocheng2018/sequential-recommendation-datasets",
-    packages=["srdatasets"],
+    packages=setuptools.find_packages(),
     python_requires=">=3.5",
     install_requires=[
         "pandas>=0.25.0",

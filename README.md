@@ -2,7 +2,7 @@
 
 Provide a tool for help dealing with some common sequential recommendation datasets
 
-[![name](https://img.shields.io/badge/pypi_package-v0.0.1-blue?style=flat-square&logo=pypi)](https://pypi.org/project/srdatasets)
+[![name](https://img.shields.io/badge/pypi_package-v0.0.2-blue?style=flat-square&logo=pypi)](https://pypi.org/project/srdatasets)
 
 ## Datasets
 
