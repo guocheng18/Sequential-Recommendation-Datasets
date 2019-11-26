@@ -1,7 +1,6 @@
 import argparse
 import logging
 import sys
-import unicodedata
 
 from pandas.io.json import json_normalize
 from tabulate import tabulate
@@ -9,9 +8,13 @@ from tabulate import tabulate
 from srdatasets.datasets import __datasets__
 from srdatasets.download import _download
 from srdatasets.process import _process
-from srdatasets.utils import (__warehouse__, get_datasetname,
-                              get_downloaded_datasets, get_processed_datasets,
-                              read_json)
+from srdatasets.utils import (
+    __warehouse__,
+    get_datasetname,
+    get_downloaded_datasets,
+    get_processed_datasets,
+    read_json,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -197,9 +200,7 @@ else:
             table = [
                 [
                     d,
-                    unicodedata.lookup("Heavy Check Mark")
-                    if d in downloaded_datasets
-                    else "",
+                    "Y" if d in downloaded_datasets else "",
                     len(processed_datasets[d]) if d in processed_datasets else "",
                 ]
                 for d in __datasets__
