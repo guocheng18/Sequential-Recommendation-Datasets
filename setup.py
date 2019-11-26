@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="srdatasets",
-    version="0.0.2",
+    version="0.0.3",
     author="Cheng Guo",
     author_email="guocheng672@gmail.com",
     description="A collection of research ready datasets for sequential recommendation",
