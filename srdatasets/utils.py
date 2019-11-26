@@ -59,3 +59,7 @@ def read_json(path):
             except:
                 logger.exception("Read json file failed")
     return content
+
+
+def get_datasetname(name):
+    return {d.lower(): d for d in __datasets__}.get(name.lower(), name)

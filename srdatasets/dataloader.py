@@ -9,14 +9,14 @@ from collections import Counter
 import numpy as np
 
 from srdatasets.datasets import __datasets__
-from srdatasets.utils import __warehouse__, get_processed_datasets
+from srdatasets.utils import (__warehouse__, get_datasetname,
+                              get_processed_datasets)
 
 logger = logging.getLogger(__name__)
 
 
 class DataLoader:
 
-    _datasets_lowercase = {d.lower(): d for d in __datasets__}
     _processed_datasets = get_processed_datasets()
 
     def __init__(
@@ -44,7 +44,7 @@ class DataLoader:
         
         Note: training data is shuffled automatically.
         """
-        dataset_name = self._datasets_lowercase.get(dataset_name.lower(), dataset_name)
+        dataset_name = get_datasetname(dataset_name)
 
         if dataset_name not in __datasets__:
             raise ValueError(
@@ -95,9 +95,9 @@ class DataLoader:
             counter = Counter()
             for data in self.dataset:
                 if len(data) > 5:
-                    self.item_counts.update(data[1] + data[2] + data[3])
+                    counter.update(data[1] + data[2] + data[3])
                 else:
-                    self.item_counts.update(data[1] + data[2])
+                    counter.update(data[1] + data[2])
             self.item_counts = np.array(
                 [counter[i] for i in range(max(counter.keys()) + 1)]
             )
@@ -125,22 +125,20 @@ class DataLoader:
         else:
             return math.ceil(len(self.dataset) / self.batch_size)
 
-    def sample_negatives(self, input_items, target_items):
+    def sample_negatives(self, batch_items_list):
         negatives = []
-        for b in np.concatenate((input_items, target_items), 1):
+        for b in np.concatenate(batch_items_list, 1):
             item_counts = copy.deepcopy(self.item_counts)
             item_counts[b] = 0
             item_counts[0] = 0
             probs = item_counts / item_counts.sum()
             _negatives = np.random.choice(
                 len(item_counts),
-                size=self.negatives_per_target * target_items.shape[1],
+                size=self.negatives_per_target * batch_items_list[-1].shape[1],
                 replace=False,
                 p=probs,
             )
-            _negatives = _negatives.reshape(
-                (target_items.shape[1], self.negatives_per_target)
-            )
+            _negatives = _negatives.reshape((-1, self.negatives_per_target))
             negatives.append(_negatives)
         return np.stack(negatives)
 
@@ -164,14 +162,12 @@ class DataLoader:
             ]
             self._batch_idx += 1
             batch_data = [np.array(b) for b in zip(*batch)]
-            # TODO
+            # Diff task
+            target_idx = 3 if len(batch_data) > 5 else 2
             if not self.include_timestamp:
-                if len(batch_data) > 5:
-                    batch_data = batch_data[:4]
-                else:
-                    batch_data = batch_data[:3]
+                batch_data = batch_data[: target_idx + 1]
             # Sampling negatives
             if self.train and self.negatives_per_target > 0:
-                negatives = self.sample_negatives(batch_data[1], batch_data[2])
+                negatives = self.sample_negatives(batch_data[1 : target_idx + 1])
                 batch_data.append(negatives)
             return batch_data

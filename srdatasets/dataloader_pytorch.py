@@ -6,7 +6,8 @@ import torch
 import torch.utils.data
 
 from srdatasets.datasets import __datasets__
-from srdatasets.utils import __warehouse__, get_processed_datasets
+from srdatasets.utils import (__warehouse__, get_datasetname,
+                              get_processed_datasets)
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,6 @@ class Dataset(torch.utils.data.Dataset):
 
 class DataLoader(torch.utils.data.DataLoader):
 
-    _datasets_lowercase = {d.lower(): d for d in __datasets__}
     _processed_datasets = get_processed_datasets()
 
     def collate_fn(self, batch):
@@ -95,7 +95,7 @@ class DataLoader(torch.utils.data.DataLoader):
         
         Note: training data is shuffled automatically.
         """
-        dataset_name = self._datasets_lowercase.get(dataset_name.lower(), dataset_name)
+        dataset_name = get_datasetname(dataset_name)
 
         if dataset_name not in __datasets__:
             raise ValueError(
