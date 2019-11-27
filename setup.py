@@ -1,19 +1,22 @@
-import setuptools
+from setuptools import find_packages, setup
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+VERSION = "0.0.4"
 
-setuptools.setup(
+with open("README.md", "r") as f:
+    long_description = f.read()
+
+
+setup(
     name="srdatasets",
-    version="0.0.3",
+    version=VERSION,
     author="Cheng Guo",
     author_email="guocheng672@gmail.com",
     description="A collection of research ready datasets for sequential recommendation",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/guocheng2018/sequential-recommendation-datasets",
-    packages=setuptools.find_packages(),
-    python_requires=">=3.5",
+    packages=find_packages(),
+    python_requires=">=3.6",
     install_requires=[
         "pandas>=0.25.0",
         "tqdm>=4.33.0",
@@ -21,8 +24,11 @@ setuptools.setup(
         "numpy>=1.16.4",
     ],
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
+        "Development Status :: 1 - Beta",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: Apache Software License",
+        "Topic :: Software Development :: Dataset Tools",
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
 )
