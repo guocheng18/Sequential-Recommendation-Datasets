@@ -24,11 +24,9 @@ setup(
         "numpy>=1.16.4",
     ],
     classifiers=[
-        "Development Status :: 1 - Beta",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",
-        "Topic :: Software Development :: Dataset Tools",
-        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
 )
