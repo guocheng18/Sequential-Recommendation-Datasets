@@ -12,7 +12,7 @@ tqdm.pandas()
 
 class TaFeng(Dataset):
 
-    __url__ = "https://sites.google.com/site/dataminingcourse2009/spring2016/annoucement2016/assignment3/D11-02.zip"
+    __url__ = "https://sites.google.com/site/dataminingcourse2009/spring2016/annoucement2016/assignment3/D11-02.ZIP"
     __corefile__ = ["D11", "D12", "D01", "D02"]
 
     def download(self):
