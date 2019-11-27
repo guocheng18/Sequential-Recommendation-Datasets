@@ -57,12 +57,12 @@ def extract(filepath, out):
 
     elif filename.endswith(".gz"):
         with gzip.open(filepath, "rb") as fin:
-            with open(out, "w") as fout:
+            with open(out, "wb") as fout:
                 shutil.copyfileobj(fin, fout)
 
     elif filename.endswith(".bz2"):
         with bz2.open(filepath, "rb") as fin:
-            with open(out, "w") as fout:
+            with open(out, "wb") as fout:
                 shutil.copyfileobj(fin, fout)
     else:
         logger.error("Unrecognized compressing format of %s", filepath)

@@ -3,6 +3,7 @@
 Provide a tool for help dealing with some common sequential recommendation datasets
 
 [![PyPI version](https://badge.fury.io/py/srdatasets.svg)](https://badge.fury.io/py/srdatasets)
+[![codecov](https://codecov.io/gh/guocheng2018/sequential-recommendation-datasets/branch/master/graph/badge.svg?token=lewxFzWM0y)](https://codecov.io/gh/guocheng2018/sequential-recommendation-datasets)
 
 ## Datasets
 

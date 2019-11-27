@@ -3,5 +3,8 @@ from srdatasets.download import _download
 
 
 def test_download_all_datasets():
-    for dataset in __datasets__:
-        _download(dataset)
+    _download("Amazon-Apps")
+    _download("FourSquare-NYC")
+    for d in __datasets__:
+        if not d.startswith("Amazon") and not d.startswith("FourSquare")
+            _download(d)
