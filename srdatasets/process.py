@@ -8,7 +8,6 @@ import sys
 import time
 from collections import defaultdict
 from datetime import datetime
-from pathlib import Path
 
 from tqdm import tqdm
 
@@ -105,7 +104,7 @@ def access_split_days(df):
 
 def preprocess_and_save(df, dname, config):
     """General preprocessing method
-    
+
     Args:
         df (DataFrame): columns: `user_id`, `item_id`, `timestamp`.
         args (Namespace): arguments.
@@ -182,7 +181,7 @@ def preprocess_and_save(df, dname, config):
 
 
 def enable_no_augment(seqs, config):
-    """ 
+    """
     For short-term task: keep most recent (input_len + target_len) items,
     For long-short-term task: keep most recent (pre_sessions + 1) sessions
     """
@@ -260,7 +259,7 @@ def generate_sequences(df, config):
 
 
 def split_sequences(user_seq, config, mode):
-    """ Without sessions 
+    """ Without sessions
     """
     if config["split_by"] == "user":
         test_ratio = config["dev_split"] if mode else config["test_split"]

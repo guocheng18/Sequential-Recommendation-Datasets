@@ -1,7 +1,6 @@
 import copy
 import logging
 import math
-import os
 import pickle
 import random
 from collections import Counter
@@ -41,7 +40,7 @@ class DataLoader:
             negatives_per_target (int, optional): number of negative samples per target
             include_timestamp (bool, optional): add timestamps to batch data
             drop_last (bool, optional): drop last incomplete batch
-        
+
         Note: training data is shuffled automatically.
         """
         dataset_name = get_datasetname(dataset_name)

@@ -33,7 +33,7 @@ def get_processed_datasets():
 
 
 def get_downloaded_datasets():
-    """ Simple check based on the existences of corefiles 
+    """ Simple check based on the existences of corefiles
     """
     D = []
     for d in __datasets__:

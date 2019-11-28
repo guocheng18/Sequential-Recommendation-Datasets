@@ -7,15 +7,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@master
         with:
           version: 3.6
-      - name: Generate coverage report
+      - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install flake8
           pip install pytest
           pip install pytest-cov
+      - name: Code style check
+        run: flake8 srdatasets/ tests/
+      - name: Generate coverage report
+        run: |
           export PYTHONPATH="."
           pytest --cov=srdatasets --cov-report=xml tests/
       - name: Upload coverage to Codecov
