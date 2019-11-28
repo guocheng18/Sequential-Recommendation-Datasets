@@ -4,10 +4,7 @@ on: push
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
       - name: Setup Python
@@ -16,10 +13,10 @@ jobs:
           version: 3.6
       - name: Generate coverage report
         run: |
+          export PYTHONPATH="."
           pip install pytest
           pip install pytest-cov
-          pip install .
-          pytest --cov=./ --cov-report=xml
+          pytest --cov=srdatasets --cov-report=xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
