@@ -13,10 +13,11 @@ jobs:
           version: 3.6
       - name: Generate coverage report
         run: |
-          export PYTHONPATH="."
+          pip install -r requirements.txt
           pip install pytest
           pip install pytest-cov
-          pytest --cov=srdatasets --cov-report=xml
+          export PYTHONPATH="."
+          pytest --cov=srdatasets --cov-report=xml tests/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
