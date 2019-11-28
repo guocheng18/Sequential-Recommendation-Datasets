@@ -1,16 +1,17 @@
 from setuptools import find_packages, setup
 
-VERSION = "0.0.7"
-
 with open("README.md", "r") as f:
     long_description = f.read()
 
 with open("requirements.txt", "r") as f:
     install_requires = f.read().splitlines()
 
+with open("version.txt", "r") as f:
+    version = f.read().strip()
+
 setup(
     name="srdatasets",
-    version=VERSION,
+    version=version,
     author="Cheng Guo",
     author_email="guocheng672@gmail.com",
     description="A collection of research ready datasets for sequential recommendation",
