@@ -37,7 +37,7 @@ class Args:
 
 
 @pytest.mark.run(order=2)
-@pytest.mark.parameterize("name", datasets)
+@pytest.mark.parametrize("name", datasets)
 def test_default_process(name):
     args = Args()
     args.dataset = name
