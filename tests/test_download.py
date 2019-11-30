@@ -1,10 +1,19 @@
-from srdatasets.datasets import __datasets__
+import pytest
+
 from srdatasets.download import _download
 
+datasets = [
+    "Amazon-Apps",
+    "CiteULike",
+    "FourSquare-NYC",
+    "Gowalla",
+    "Lastfm1K",
+    "MovieLens20M",
+    "TaFeng",
+]
 
-def test_download_all_datasets():
-    _download("Amazon-Apps")
-    _download("FourSquare-NYC")
-    for d in __datasets__:
-        if not d.startswith("Amazon") and not d.startswith("FourSquare"):
-            _download(d)
+
+@pytest.mark.run(order=1)
+@pytest.mark.parameterize("name", datasets)
+def test_download_datasets(name):
+    _download(name)
