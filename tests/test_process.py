@@ -40,14 +40,14 @@ def test_process_short_user_session():
 
 
 def test_process_short_time(monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda: 10)
+    monkeypatch.setattr("builtins.input", lambda prompt="": 10)
     args = Args()
     args.split_by = "time"
     _process(args)
 
 
 def test_process_short_time_session(monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda: 10)
+    monkeypatch.setattr("builtins.input", lambda prompt="": 10)
     args = Args()
     args.split_by = "time"
     args.session_interval = 60
@@ -62,7 +62,7 @@ def test_process_long_short_user():
 
 
 def test_process_long_short_time(monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda: 10)
+    monkeypatch.setattr("builtins.input", lambda prompt="": 10)
     args = Args()
     args.split_by = "time"
     args.session_interval = 60

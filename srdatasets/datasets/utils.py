@@ -43,7 +43,7 @@ def extract(filepath, out):
     logger.info("Unzipping...")
     filename = filepath.as_posix()
 
-    if filename.endswith(".zip"):
+    if filename.endswith(".zip") or filename.endswith(".ZIP"):
         with ZipFile(filepath) as zipObj:
             zipObj.extractall(out)
 

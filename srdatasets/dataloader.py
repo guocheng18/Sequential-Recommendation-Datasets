@@ -15,9 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class DataLoader:
-
-    _processed_datasets = get_processed_datasets()
-
     def __init__(
         self,
         dataset_name: str,
@@ -52,20 +49,19 @@ class DataLoader:
                 )
             )
 
-        if dataset_name not in self._processed_datasets:
+        _processed_datasets = get_processed_datasets()
+        if dataset_name not in _processed_datasets:
             raise ValueError(
                 "{} has not been processed, currently processed datasets: {}".format(
                     dataset_name,
-                    ", ".join(self._processed_datasets)
-                    if self._processed_datasets
-                    else "none",
+                    ", ".join(_processed_datasets) if _processed_datasets else "none",
                 )
             )
 
-        if config_id not in self._processed_datasets[dataset_name]:
+        if config_id not in _processed_datasets[dataset_name]:
             raise ValueError(
                 "Unrecognized config id, existing config ids: {}".format(
-                    ", ".join(self._processed_datasets[dataset_name])
+                    ", ".join(_processed_datasets[dataset_name])
                 )
             )
 

@@ -8,7 +8,7 @@ def test_download_and_trandform():
     rawdir = __warehouse__.joinpath("Amazon", "raw")
     os.makedirs(rawdir, exist_ok=True)
     amazon = Amazon(rawdir)
-    category = "pet"
+    category = "Pet"
     amazon.download(category)
     assert rawdir.joinpath(amazon.__corefile__[category]).exists()
     df = amazon.transform(category, 4)
