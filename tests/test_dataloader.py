@@ -25,6 +25,8 @@ class Args:
     min_session_len = 2
     pre_sessions = 10
     pick_targets = "random"
+    no_augment = False
+    remove_duplicates = False
 
 
 if Args.dataset not in get_downloaded_datasets():
