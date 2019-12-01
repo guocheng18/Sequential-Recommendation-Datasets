@@ -21,14 +21,15 @@ def get_processed_datasets():
         "config.json",
     ]
     D = {}
-    for d in __warehouse__.iterdir():  # loop datasets
-        if d.joinpath("processed").exists():
-            configs = []
-            for c in d.joinpath("processed").iterdir():  # loop configs
-                if all(c.joinpath(p).exists() for p in P):
-                    configs.append(c.stem)
-            if configs:
-                D[d.stem] = configs
+    if __warehouse__.exists():
+        for d in __warehouse__.iterdir():  # loop datasets
+            if d.joinpath("processed").exists():
+                configs = []
+                for c in d.joinpath("processed").iterdir():  # loop configs
+                    if all(c.joinpath(p).exists() for p in P):
+                        configs.append(c.stem)
+                if configs:
+                    D[d.stem] = configs
     return D
 
 

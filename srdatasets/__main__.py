@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 import sys
 
 from pandas.io.json import json_normalize
@@ -122,7 +121,6 @@ parser_g.add_argument(
 )
 args = parser.parse_args()
 
-os.makedirs(__warehouse__, exist_ok=True)
 
 if "dataset" in args and args.dataset is not None:
     args.dataset = get_datasetname(args.dataset)
