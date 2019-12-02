@@ -4,6 +4,7 @@ from srdatasets.datasets.foursquare import FourSquare
 from srdatasets.datasets.gowalla import Gowalla
 from srdatasets.datasets.lastfm1k import Lastfm1K
 from srdatasets.datasets.movielens20m import MovieLens20M
+from srdatasets.datasets.retailrocket import Retailrocket
 from srdatasets.datasets.tafeng import TaFeng
 from srdatasets.datasets.taobao import Taobao
 from srdatasets.datasets.tmall import Tmall
@@ -16,6 +17,7 @@ dataset_classes = {
     "Gowalla": Gowalla,
     "Lastfm1K": Lastfm1K,
     "MovieLens20M": MovieLens20M,
+    "Retailrocket": Retailrocket,
     "TaFeng": TaFeng,
     "Taobao": Taobao,
     "Tmall": Tmall,
@@ -29,5 +31,14 @@ __datasets__ = (
     amazon_datasets
     + ["CiteULike"]
     + foursquare_datasets
-    + ["Gowalla", "Lastfm1K", "MovieLens20M", "TaFeng", "Taobao", "Tmall", "Yelp"]
+    + [
+        "Gowalla",
+        "Lastfm1K",
+        "MovieLens20M",
+        "TaFeng",
+        "Retailrocket",
+        "Taobao",
+        "Tmall",
+        "Yelp",
+    ]
 )
