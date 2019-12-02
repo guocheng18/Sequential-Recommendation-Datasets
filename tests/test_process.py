@@ -1,3 +1,6 @@
+import copy
+from argparse import Namespace
+
 from srdatasets.download import _download
 from srdatasets.process import _process
 from srdatasets.utils import get_downloaded_datasets
@@ -5,69 +8,70 @@ from srdatasets.utils import get_downloaded_datasets
 # ===== Integration testing =====
 
 
-class Args:
-    dataset = "FourSquare-NYC"
-    min_freq_item = 10
-    min_freq_user = 10
-    task = "short"
-    split_by = "user"
-    dev_split = 0.1
-    test_split = 0.2
-    input_len = 9
-    target_len = 1
-    session_interval = 0
-    max_session_len = 10
-    min_session_len = 2
-    pre_sessions = 10
-    pick_targets = "random"
-    no_augment = False
-    remove_duplicates = False
+args = Namespace(
+    dataset="FourSquare-NYC",
+    min_freq_item=10,
+    min_freq_user=10,
+    task="short",
+    split_by="user",
+    dev_split=0.1,
+    test_split=0.2,
+    input_len=9,
+    target_len=1,
+    session_interval=0,
+    max_session_len=10,
+    min_session_len=2,
+    pre_sessions=10,
+    pick_targets="random",
+    no_augment=False,
+    remove_duplicates=False,
+)
 
 
-if Args.dataset not in get_downloaded_datasets():
-    _download(Args.dataset)
+if args.dataset not in get_downloaded_datasets():
+    _download(args.dataset)
 
 
 def test_process_short_user():
-    args = Args()
-    _process(args)
+    local_args = copy.deepcopy(args)
+    _process(local_args)
 
 
 def test_process_short_user_session():
-    args = Args()
-    args.session_interval = 60
-    _process(args)
+    local_args = copy.deepcopy(args)
+    local_args.session_interval = 60
+    _process(local_args)
 
 
 def test_process_short_time(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda prompt="": 10)
-    args = Args()
-    args.split_by = "time"
-    _process(args)
+    local_args = copy.deepcopy(args)
+    local_args.split_by = "time"
+    _process(local_args)
 
 
 def test_process_short_time_session(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda prompt="": 10)
-    args = Args()
-    args.split_by = "time"
-    args.session_interval = 60
-    _process(args)
+    local_args = copy.deepcopy(args)
+    local_args.split_by = "time"
+    local_args.session_interval = 60
+    _process(local_args)
 
 
 def test_process_long_short_user():
-    args = Args()
-    args.session_interval = 60
-    args.task = "long-short"
-    _process(args)
+    local_args = copy.deepcopy(args)
+    local_args.session_interval = 60
+    local_args.task = "long-short"
+    _process(local_args)
 
 
 def test_process_long_short_time(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda prompt="": 10)
-    args = Args()
-    args.split_by = "time"
-    args.session_interval = 60
-    args.task = "long-short"
-    _process(args)
+    local_args = copy.deepcopy(args)
+    local_args.split_by = "time"
+    local_args.session_interval = 60
+    local_args.task = "long-short"
+    _process(local_args)
 
 
 # ===== TODO Unit testing =====
