@@ -103,7 +103,7 @@ parser_g.add_argument(
     "--pick-targets",
     type=str,
     choices=["last", "random"],
-    default="last",
+    default="random",
     help="[long-short] pick T random or last items from current session as targets",
 )
 parser_g.add_argument(
