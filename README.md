@@ -144,8 +144,8 @@ DataLoader is a built-in class that makes loading processed datasets easy. Pract
 ```python
 from srdatasets.dataloader import DataLoader
 
-trainloader = DataLoader("amazon-books", "c1574673118829", batch_size=32, Train=True, negatives_per_target=5, include_timestamp=True)
-testloader = DataLoader("amazon-books", "c1574673118829", batch_size=32, Train=False, include_timestamp=True)
+trainloader = DataLoader("amazon-books", "c1574673118829", batch_size=32, train=True, negatives_per_target=5, include_timestamp=True)
+testloader = DataLoader("amazon-books", "c1574673118829", batch_size=32, train=False, include_timestamp=True)
 ```
 
 For pytorch users, there is a wrapper implementation of `torch.utils.data.DataLoader`, you can then set keyword arguments like `num_workers` and `pin_memory` to speed up loading data
@@ -153,8 +153,8 @@ For pytorch users, there is a wrapper implementation of `torch.utils.data.DataLo
 ```python
 from srdatasets.dataloader_pytorch import DataLoader
 
-trainloader = DataLoader("amazon-books", "c1574673118829", batch_size=32, Train=True, negatives_per_target=5, include_timestamp=True, num_workers=8, pin_memory=True)
-testloader = DataLoader("amazon-books", "c1574673118829", batch_size=32, Train=False, include_timestamp=True, num_workers=8, pin_memory=True)
+trainloader = DataLoader("amazon-books", "c1574673118829", batch_size=32, train=True, negatives_per_target=5, include_timestamp=True, num_workers=8, pin_memory=True)
+testloader = DataLoader("amazon-books", "c1574673118829", batch_size=32, train=False, include_timestamp=True, num_workers=8, pin_memory=True)
 ```
 
 ### Iteration template
