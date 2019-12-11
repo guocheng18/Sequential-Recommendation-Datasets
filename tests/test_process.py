@@ -74,4 +74,10 @@ def test_process_long_short_time(monkeypatch):
     _process(local_args)
 
 
+def test_no_augment_and_remove_duplicates():
+    local_args = copy.deepcopy(args)
+    local_args.no_augment = True
+    local_args.remove_duplicates = True
+    _process(local_args)
+
 # ===== TODO Unit testing =====

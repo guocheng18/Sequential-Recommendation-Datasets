@@ -1,3 +1,7 @@
+[run]
+source = srdatasets
+omit = srdatasets/__main__.py
+
 [report]
 exclude_lines =
     pragma: no cover
