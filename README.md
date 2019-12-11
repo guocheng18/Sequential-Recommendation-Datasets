@@ -1,9 +1,8 @@
 # Sequential Recommendation Datasets
 
-Provide a tool for help dealing with some common sequential recommendation datasets
+Provide a tool for helping dealing with some common sequential recommendation datasets
 
-[![PyPI version](https://badge.fury.io/py/srdatasets.svg)](https://badge.fury.io/py/srdatasets)
-[![Actions Status](https://github.com/guocheng2018/sequential-recommendation-datasets/workflows/Test%20and%20Publish/badge.svg)](https://github.com/guocheng2018/sequential-recommendation-datasets/actions)
+[![Actions Status](https://github.com/guocheng2018/sequential-recommendation-datasets/workflows/build/badge.svg)](https://github.com/guocheng2018/sequential-recommendation-datasets/actions)
 [![codecov](https://codecov.io/gh/guocheng2018/sequential-recommendation-datasets/branch/master/graph/badge.svg?token=lewxFzWM0y)](https://codecov.io/gh/guocheng2018/sequential-recommendation-datasets)
 
 ## Datasets
@@ -52,7 +51,7 @@ pip install -U srdatasets
 
 ## Download datasets
 
-Run the command below to download datasets. Note, since some datasets are not directly accessible, you'll be warned then to download them manually and place them somewhere it tells you.
+Run the command below to download datasets. As some datasets are not directly accessible, you'll be warned  to download them manually and place them somewhere it tells you.
 
 ```bash
 python -m srdatasets download --dataset=[dataset_name]
@@ -74,7 +73,7 @@ python -m srdatasets process --dataset=[dataset_name] [--options]
 
 ### Splitting options
 
-Two dataset splitting methods are provided: user-based and time-based. User-based means splitting is executed on every user hehavior sequence given the ratio of validation set and test set while time-based means splitting is based on the date of user behaviors. After splitting some dataset, two processed datasets are generated, one for development, which uses the validation set as the test set, the other for test, which contains the full training set.
+Two dataset splitting methods are provided: **user-based** and **time-based**. User-based means that splitting is executed on every user behavior sequence given the ratio of validation set and test set, while time-based means that splitting is based on the date of user behaviors. After splitting some dataset, two processed datasets are generated, one for development, which uses the validation set as the test set, the other for test, which contains the full training set.
 
 ```code
 --split-by     User or time (default: user)
@@ -88,7 +87,7 @@ Two dataset splitting methods are provided: user-based and time-based. User-base
 
 For **short term** recommnedation task, you use previous `input-len` items to predict next `target-len` items. To make user interests more focused, user behavior sequences can also be cut into multiple sessions if `session-interval` is given. If the number of previous items is smaller than `input-len`, 0 is padded to the left.
 
-For **long-short term** recommendation task, you use `pre-sessions` previous sessions and current session to predict `target-len` items. The target items are picked randomly or lastly from current session. So the length of current session is `max-session-len` - `target-len` while the length of any previous session is `max-session-len`. If any previous session or current session is shorter than the preset length, 0 is padded to the left.
+For **long and short term** recommendation task, you use `pre-sessions` previous sessions and current session to predict `target-len` items. The target items are picked randomly or lastly from current session. So the length of current session is `max-session-len` - `target-len` while the length of any previous session is `max-session-len`. If any previous session or current session is shorter than the preset length, 0 is padded to the left.
 
 ```code
 --task              Short or long-short (default: short)
@@ -127,7 +126,7 @@ python -m srdatasets info --dataset=[dataset_name]
 
 ## DataLoader
 
-DataLoader is a built-in class that makes loading processed datasets easy. Practically, once initialized a dataloder by passing the dataset name, processed version (config id), batch_size and a flag to load training data or test data, you can then loop it to get batch data. Considering that some models use rank-based leanring, negative sampling is intergrated into DataLoader. The negatives are sampled from all items except items in current data according to popularity. By default it is turned off. Also, the time of user behaviors is sometimes an important feature, you can include it into batch data by setting `include_timestmap` to True.
+DataLoader is a built-in class that makes loading processed datasets easy. Practically, once initialized a dataloder by passing the dataset name, processed version (config id), batch_size and a flag to load training data or test data, you can then loop it to get batch data. Considering that some models use rank-based learning, negative sampling is intergrated into DataLoader. The negatives are sampled from all items except items in current data according to popularity. By default it (`negatives_per_target`) is turned off. Also, the time of user behaviors is sometimes an important feature, you can include it into batch data by setting `include_timestmap` to True.
 
 ### Arguments
 
@@ -178,12 +177,12 @@ for epoch in range(10):
         #   numpy.ndarray or torch.LongTensor
         pass
 
-    # Evaluate
+    # Test
     for users, input_items, target_items, input_item_timestamps, target_item_timestamps in testloader:
         pass
 ```
 
-For long-short term recommendation task
+For long and short term recommendation task
 
 ```python
 for epoch in range(10):
@@ -203,11 +202,11 @@ for epoch in range(10):
         #   numpy.ndarray or torch.LongTensor
         pass
 
-    # Evaluate
+    # Test
     for users, pre_sessions_items, cur_session_items, target_items, pre_sessions_item_timestamps, cur_session_item_timestamps, target_item_timestamps in testloader:
         pass
 ```
 
 ## Disclaimers
 
-The datasets have their own licenses, this repo only provides a way to use them.
+This repo does not host or distribute any of the datasets, it is your responsibility to determine whether you have permission to use the dataset under the dataset's license.
