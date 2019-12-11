@@ -1,12 +1,9 @@
 import logging
 
 import pandas as pd
-from tqdm import tqdm
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import extract
-
-tqdm.pandas()
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +27,7 @@ class Retailrocket(Dataset):
             header=0,
             index_col=False,
             usecols=[0, 1, 3],
+            converters={"timestamp": lambda x: int(x / 1000)},
         )
-        df["timestamp"] = df["timestamp"].progress_apply(lambda x: int(x / 1000))
         df = df.rename(columns={"visitorid": "user_id", "itemid": "item_id"})
         return df

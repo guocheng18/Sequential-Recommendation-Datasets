@@ -1,12 +1,9 @@
 from datetime import datetime
 
 import pandas as pd
-from tqdm import tqdm
 
 from srdatasets.datasets.dataset import Dataset
 from srdatasets.datasets.utils import download_url, extract
-
-tqdm.pandas()
 
 
 class Gowalla(Dataset):
@@ -25,9 +22,11 @@ class Gowalla(Dataset):
             sep="\t",
             names=["user_id", "check_in_time", "latitude", "longtitude", "location_id"],
             usecols=[0, 1, 4],
-        )
-        df["check_in_time"] = df["check_in_time"].progress_apply(
-            lambda x: int(datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ").timestamp())
+            converters={
+                "check_in_time": lambda x: int(
+                    datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ").timestamp()
+                )
+            },
         )
         df = df.rename(columns={"location_id": "item_id", "check_in_time": "timestamp"})
         return df
