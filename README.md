@@ -46,7 +46,7 @@ Provide a tool for helping dealing with some common sequential recommendation da
 ## Install this tool
 
 ```bash
-pip install -U srdatasets
+pip install -U srdatasets —-user
 ```
 
 ## Download datasets
