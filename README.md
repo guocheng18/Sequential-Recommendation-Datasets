@@ -54,13 +54,13 @@ pip install -U srdatasets
 Run the command below to download datasets. As some datasets are not directly accessible, you'll be warned  to download them manually and place them somewhere it tells you.
 
 ```bash
-python -m srdatasets download --dataset=[dataset_name]
+srdatasets download --dataset=[dataset_name]
 ```
 
 To get a view of downloaded and processed status of all datasets, run
 
 ```bash
-python -m srdatasets info
+srdatasets info
 ```
 
 ## Process datasets
@@ -68,7 +68,7 @@ python -m srdatasets info
 The generic processing command is
 
 ```bash
-python -m srdatasets process --dataset=[dataset_name] [--options]
+srdatasets process --dataset=[dataset_name] [--options]
 ```
 
 ### Splitting options
@@ -121,7 +121,7 @@ For **long and short term** recommendation task, you use `pre-sessions` previous
 By using different options, a dataset will have many processed versions. You can run the command below to get configurations and statistics of all processed versions of some dataset. The `config id` shown in output is a required argument of `DataLoader`.
 
 ```bash
-python -m srdatasets info --dataset=[dataset_name]
+srdatasets info --dataset=[dataset_name]
 ```
 
 ## DataLoader
