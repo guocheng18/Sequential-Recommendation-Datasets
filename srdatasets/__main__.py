@@ -18,6 +18,7 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %H:%M:%S",
 )
 
+
 def main():
     parser = argparse.ArgumentParser("srdatasets | python -m srdatasets")
     subparsers = parser.add_subparsers(help="commands", dest="command")
@@ -122,10 +123,8 @@ def main():
     )
     args = parser.parse_args()
 
-
     if "dataset" in args and args.dataset is not None:
         args.dataset = get_datasetname(args.dataset)
-
 
     if args.command is None:
         parser.print_help()
@@ -282,6 +281,7 @@ def main():
                                 stats, headers="keys", showindex=False, tablefmt="psql"
                             )
                         )
+
 
 if __name__ == "__main__":
     main()
