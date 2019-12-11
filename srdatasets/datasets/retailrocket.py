@@ -27,7 +27,7 @@ class Retailrocket(Dataset):
             header=0,
             index_col=False,
             usecols=[0, 1, 3],
-            converters={"timestamp": lambda x: int(x / 1000)},
+            converters={"timestamp": lambda x: int(int(x) / 1000)},
         )
         df = df.rename(columns={"visitorid": "user_id", "itemid": "item_id"})
         return df
