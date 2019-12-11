@@ -29,7 +29,6 @@ class Tmall(Dataset):
             header=0,
             index_col=False,
             usecols=[0, 1, 5],
-            dtype={"time_stamp": str},
             converters={
                 "time_stamp": lambda x: int(
                     datetime.strptime("2015" + x, "%Y%m%d").timestamp()
