@@ -24,7 +24,7 @@ class CiteULike(Dataset):
             names=["user_id", "tag_id", "positive", "timestamp"],
             usecols=[0, 1, 3],
             comment="%",
-            converters={"timestamp": int},
+            converters={"timestamp": lambda x: int(float(x))},
         )
         df = df.rename(columns={"tag_id": "item_id"})
         return df
