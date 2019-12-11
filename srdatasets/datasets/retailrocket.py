@@ -32,5 +32,5 @@ class Retailrocket(Dataset):
             usecols=[0, 1, 3],
         )
         df["timestamp"] = df["timestamp"].progress_apply(lambda x: int(x / 1000))
-        df = df.rename({"visitorid": "user_id", "itemid": "item_id"})
+        df = df.rename(columns={"visitorid": "user_id", "itemid": "item_id"})
         return df
