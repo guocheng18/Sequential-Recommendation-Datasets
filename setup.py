@@ -27,4 +27,9 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",
     ],
+    entry_points={
+        "console_scripts": [
+            "srdatasets=srdatasets.__main__:main"
+        ]
+    }
 )
