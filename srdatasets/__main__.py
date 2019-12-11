@@ -230,7 +230,7 @@ else:
                             for c in processed_datasets[args.dataset]
                         ]
                     )
-                    print("Configs part1")
+                    print("Configs")
                     configs_part1 = configs.iloc[:, :8]
                     configs_part1.insert(
                         0, "config id", processed_datasets[args.dataset]
@@ -243,7 +243,7 @@ else:
                             tablefmt="psql",
                         )
                     )
-                    print("\nConfigs part2")
+                    print()
                     configs_part2 = configs.iloc[:, 8:]
                     configs_part2.insert(
                         0, "config id", processed_datasets[args.dataset]
