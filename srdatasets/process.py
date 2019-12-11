@@ -14,7 +14,6 @@ from tqdm import tqdm
 from srdatasets.datasets import dataset_classes
 from srdatasets.utils import __warehouse__
 
-tqdm.pandas()
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +228,7 @@ def generate_sequences(df, config):
     logger.info("Grouping items by user...")
     df = df.sort_values("timestamp", ascending=True)
     df["item_and_time"] = list(zip(df["item_id"], df["timestamp"]))
-    seqs = df.groupby("user_id")["item_and_time"].progress_apply(list)
+    seqs = df.groupby("user_id")["item_and_time"].apply(list)
     seqs = list(zip(seqs.index, seqs))
 
     logger.warning("Dropping too short user sequences...")
