@@ -1,4 +1,5 @@
 import copy
+import json
 import logging
 import math
 import pickle
@@ -76,13 +77,13 @@ class DataLoader:
                 "Negative samples are used for training, set negatives_per_target has no effect when testing"
             )
 
-        dataset_path = __warehouse__.joinpath(
-            dataset_name,
-            "processed",
-            config_id,
-            "dev" if development else "test",
-            "train.pkl" if train else "test.pkl",
+        dataset_dir = __warehouse__.joinpath(
+            dataset_name, "processed", config_id, "dev" if development else "test"
         )
+        with open(dataset_dir.joinpath("stats.json"), "r") as f:
+            self.stats = json.load(f)
+
+        dataset_path = dataset_dir.joinpath("train.pkl" if train else "test.pkl")
         with open(dataset_path, "rb") as f:
             self.dataset = pickle.load(f)  # list
 
@@ -108,6 +109,14 @@ class DataLoader:
         self.negatives_per_target = negatives_per_target
         self.drop_last = drop_last
         self._batch_idx = 0
+
+    @property
+    def num_users(self):
+        return self.stats["users"]
+
+    @property
+    def num_items(self):
+        return self.stats["items"]
 
     def __iter__(self):
         return self

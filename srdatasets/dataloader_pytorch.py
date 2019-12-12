@@ -1,3 +1,4 @@
+import json
 import logging
 import pickle
 from collections import Counter
@@ -15,18 +16,18 @@ logger = logging.getLogger(__name__)
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, name: str, config_id: str, train: bool, development: bool):
         super(Dataset, self).__init__()
-        datapath = __warehouse__.joinpath(
-            name,
-            "processed",
-            config_id,
-            "dev" if development else "test",
-            "train.pkl" if train else "test.pkl",
+        datadir = __warehouse__.joinpath(
+            name, "processed", config_id, "dev" if development else "test"
         )
+        datapath = datadir.joinpath("train.pkl" if train else "test.pkl")
         if datapath.exists():
             with open(datapath, "rb") as f:
                 self.dataset = pickle.load(f)
         else:
             raise ValueError("{} does not exist!".format(datapath))
+        with open(datadir.joinpath("stats.json"), "r") as f:
+            self.stats = json.load(f)
+
         if train:
             self.item_counts = Counter()
             for data in self.dataset:
@@ -67,6 +68,14 @@ class DataLoader(torch.utils.data.DataLoader):
             negatives = negatives.view(len(batch), -1, self.negatives_per_target)
             batch_data.append(negatives)
         return batch_data
+
+    @property
+    def num_users(self):
+        return self.dataset.stats["users"]
+
+    @property
+    def num_items(self):
+        return self.dataset.stats["items"]
 
     def __init__(
         self,
@@ -132,18 +141,18 @@ class DataLoader(torch.utils.data.DataLoader):
         self.include_timestamp = include_timestamp
         self.negatives_per_target = negatives_per_target
 
-        _dataset = Dataset(dataset_name, config_id, train, development)
+        self.dataset = Dataset(dataset_name, config_id, train, development)
         if train:
             self.item_counts = torch.tensor(
                 [
-                    _dataset.item_counts[i]
-                    for i in range(max(_dataset.item_counts.keys()) + 1)
+                    self.dataset.item_counts[i]
+                    for i in range(max(self.dataset.item_counts.keys()) + 1)
                 ],
                 dtype=torch.float,
             )
 
         super(DataLoader, self).__init__(
-            _dataset,
+            self.dataset,
             batch_size=batch_size,
             shuffle=train,
             collate_fn=self.collate_fn,
