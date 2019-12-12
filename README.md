@@ -2,8 +2,8 @@
 
 Provide a tool for helping dealing with some common sequential recommendation datasets
 
-[![Actions Status](https://github.com/guocheng2018/sequential-recommendation-datasets/workflows/build/badge.svg)](https://github.com/guocheng2018/sequential-recommendation-datasets/actions)
-[![codecov](https://codecov.io/gh/guocheng2018/sequential-recommendation-datasets/branch/master/graph/badge.svg?token=lewxFzWM0y)](https://codecov.io/gh/guocheng2018/sequential-recommendation-datasets)
+[![Build Status](https://dev.azure.com/guocheng672/sequential-recommendation-datasets/_apis/build/status/guocheng2018.sequential-recommendation-datasets?branchName=master)](https://dev.azure.com/guocheng672/sequential-recommendation-datasets/_build/latest?definitionId=1&branchName=master)
+[![PyPI version](https://badge.fury.io/py/srdatasets.svg)](https://badge.fury.io/py/srdatasets)
 
 ## Datasets
 
