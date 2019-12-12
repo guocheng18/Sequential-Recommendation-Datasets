@@ -2,7 +2,8 @@ import copy
 import shutil
 from argparse import Namespace
 
-from srdatasets.dataloader import DataLoader
+import srdatasets.dataloader
+import srdatasets.dataloader_pytorch
 from srdatasets.download import _download
 from srdatasets.process import _process
 from srdatasets.utils import (__warehouse__, get_downloaded_datasets,
@@ -47,60 +48,64 @@ _process(long_short_args)
 def test_dataloader():
     config_ids = get_processed_datasets()[args.dataset]
     for cid in config_ids:
-        dataloader = DataLoader(
-            args.dataset,
-            cid,
-            batch_size=32,
-            negatives_per_target=5,
-            include_timestamp=True,
-            drop_last=True,
-        )
-        if len(dataloader.dataset[0]) > 5:
-            for (
-                users,
-                pre_sess_items,
-                cur_sess_items,
-                target_items,
-                pre_sess_timestamps,
-                cur_sess_timestamps,
-                target_timestamps,
-                negatives,
-            ) in dataloader:
-                assert users.shape == (32,)
-                assert pre_sess_items.shape == (
-                    32,
-                    args.pre_sessions * args.max_session_len,
-                )
-                assert cur_sess_items.shape == (
-                    32,
-                    args.max_session_len - args.target_len,
-                )
-                assert target_items.shape == (32, args.target_len)
-                assert pre_sess_timestamps.shape == (
-                    32,
-                    args.pre_sessions * args.max_session_len,
-                )
-                assert cur_sess_timestamps.shape == (
-                    32,
-                    args.max_session_len - args.target_len,
-                )
-                assert target_timestamps.shape == (32, args.target_len)
-                assert negatives.shape == (32, args.target_len, 5)
-        else:
-            for (
-                users,
-                in_items,
-                out_items,
-                in_timestamps,
-                out_timestamps,
-                negatives,
-            ) in dataloader:
-                assert users.shape == (32,)
-                assert in_items.shape == (32, args.input_len)
-                assert out_items.shape == (32, args.target_len)
-                assert in_timestamps.shape == (32, args.input_len)
-                assert out_timestamps.shape == (32, args.target_len)
-                assert negatives.shape == (32, args.target_len, 5)
+        for DataLoader in [
+            srdatasets.dataloader.DataLoader,
+            srdatasets.dataloader_pytorch.DataLoader,
+        ]:
+            dataloader = DataLoader(
+                args.dataset,
+                cid,
+                batch_size=32,
+                negatives_per_target=5,
+                include_timestamp=True,
+                drop_last=True,
+            )
+            if len(dataloader.dataset[0]) > 5:
+                for (
+                    users,
+                    pre_sess_items,
+                    cur_sess_items,
+                    target_items,
+                    pre_sess_timestamps,
+                    cur_sess_timestamps,
+                    target_timestamps,
+                    negatives,
+                ) in dataloader:
+                    assert users.shape == (32,)
+                    assert pre_sess_items.shape == (
+                        32,
+                        args.pre_sessions * args.max_session_len,
+                    )
+                    assert cur_sess_items.shape == (
+                        32,
+                        args.max_session_len - args.target_len,
+                    )
+                    assert target_items.shape == (32, args.target_len)
+                    assert pre_sess_timestamps.shape == (
+                        32,
+                        args.pre_sessions * args.max_session_len,
+                    )
+                    assert cur_sess_timestamps.shape == (
+                        32,
+                        args.max_session_len - args.target_len,
+                    )
+                    assert target_timestamps.shape == (32, args.target_len)
+                    assert negatives.shape == (32, args.target_len, 5)
+            else:
+                for (
+                    users,
+                    in_items,
+                    out_items,
+                    in_timestamps,
+                    out_timestamps,
+                    negatives,
+                ) in dataloader:
+                    assert users.shape == (32,)
+                    assert in_items.shape == (32, args.input_len)
+                    assert out_items.shape == (32, args.target_len)
+                    assert in_timestamps.shape == (32, args.input_len)
+                    assert out_timestamps.shape == (32, args.target_len)
+                    assert negatives.shape == (32, args.target_len, 5)
 
 
 # TODO Test Pytorch version DataLoader
