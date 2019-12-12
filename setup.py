@@ -6,12 +6,9 @@ with open("README.md", "r") as f:
 with open("requirements.txt", "r") as f:
     install_requires = f.read().splitlines()
 
-with open("version.txt", "r") as f:
-    version = f.read().strip()
-
 setup(
     name="srdatasets",
-    version=version,
+    version="0.1.3",
     author="Cheng Guo",
     author_email="guocheng672@gmail.com",
     description="A collection of research ready datasets for sequential recommendation",
@@ -27,9 +24,5 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",
     ],
-    entry_points={
-        "console_scripts": [
-            "srdatasets=srdatasets.__main__:main"
-        ]
-    }
+    entry_points={"console_scripts": ["srdatasets=srdatasets.__main__:main"]},
 )
