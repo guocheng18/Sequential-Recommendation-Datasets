@@ -176,7 +176,7 @@ def preprocess_and_save(df, dname, config):
 
     # Save config
     save_config(processed_path, config)
-    logger.info("OK")
+    logger.info("OK, the config id is: %s", processed_path.stem)
 
 
 def enable_no_augment(seqs, config):
