@@ -219,10 +219,10 @@ def reassign_ids(train_seqs, test_seqs):
 
 
 def generate_sequences(df, config):
-    logger.warning("Dropping items (freq < {})...".format(config["min_freq_item"]))
+    logger.info("Dropping items (freq < %s)...", config["min_freq_item"])
     df = drop_items(df, config["min_freq_item"])
 
-    logger.warning("Dropping users (freq < {})...".format(config["min_freq_user"]))
+    logger.info("Dropping users (freq < %s)...", config["min_freq_user"])
     df = drop_users(df, config["min_freq_user"])
 
     logger.info("Grouping items by user...")
@@ -231,7 +231,7 @@ def generate_sequences(df, config):
     seqs = df.groupby("user_id")["item_and_time"].apply(list)
     seqs = list(zip(seqs.index, seqs))
 
-    logger.warning("Dropping too short user sequences...")
+    logger.info("Dropping too short user sequences...")
     seqs = [s for s in tqdm(seqs) if len(s[1]) > config["target_len"]]
 
     if config["session_interval"] > 0:
