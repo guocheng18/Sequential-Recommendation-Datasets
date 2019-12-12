@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as f:
 
 setup(
     name="srdatasets",
-    version="0.1.3",
+    version="0.1.4",
     author="Cheng Guo",
     author_email="guocheng672@gmail.com",
     description="A collection of research ready datasets for sequential recommendation",
