@@ -1,9 +1,10 @@
 # Sequential Recommendation Datasets
 
-Provide a tool for helping dealing with some common sequential recommendation datasets
+Provide a tool for helping deal with some common sequential recommendation datasets
 
 [![Build Status](https://dev.azure.com/guocheng672/sequential-recommendation-datasets/_apis/build/status/guocheng2018.sequential-recommendation-datasets?branchName=master)](https://dev.azure.com/guocheng672/sequential-recommendation-datasets/_build/latest?definitionId=1&branchName=master)
 [![PyPI version](https://badge.fury.io/py/srdatasets.svg)](https://badge.fury.io/py/srdatasets)
+![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/guocheng672/sequential-recommendation-datasets/1)
 
 ## Datasets
 
@@ -45,8 +46,14 @@ Provide a tool for helping dealing with some common sequential recommendation da
 
 ## Install this tool
 
+Stable version
 ```bash
 pip install -U srdatasets —-user
+```
+
+Latest version
+```bash
+pip install git+https://github.com/guocheng2018/sequential-recommendation-datasets.git --user
 ```
 
 ## Download datasets
@@ -85,7 +92,7 @@ Two dataset splitting methods are provided: **user-based** and **time-based**. U
 
 ### Task related options
 
-For **short term** recommnedation task, you use previous `input-len` items to predict next `target-len` items. To make user interests more focused, user behavior sequences can also be cut into multiple sessions if `session-interval` is given. If the number of previous items is smaller than `input-len`, 0 is padded to the left.
+For **short term** recommnedation task, you use previous `input-len` items to predict next `target-len` items. To make user interests more focused, user behavior sequences can also be cut into sessions if `session-interval` is given. If the number of previous items is smaller than `input-len`, 0 is padded to the left.
 
 For **long and short term** recommendation task, you use `pre-sessions` previous sessions and current session to predict `target-len` items. The target items are picked randomly or lastly from current session. So the length of current session is `max-session-len` - `target-len` while the length of any previous session is `max-session-len`. If any previous session or current session is shorter than the preset length, 0 is padded to the left.
 
@@ -138,6 +145,11 @@ DataLoader is a built-in class that makes loading processed datasets easy. Pract
 - `negatives_per_target`: number of negative samples per target (default: 0)
 - `include_timestamp`: add timestamps to batch data (default: False)
 - `drop_last`: drop last incomplete batch (default: False)
+
+### Attributes
+
+- `num_users`: total users in training dataset
+- `num_items`: total items in training dataset (not including the padding item 0)
 
 ### Initialization example
 
