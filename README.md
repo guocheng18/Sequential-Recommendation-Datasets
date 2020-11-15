@@ -1,11 +1,9 @@
-# Sequential Recommendation Datasets
-
-Provide a tool for helping deal with some common sequential recommendation datasets
-
 [![Build Status](https://dev.azure.com/guocheng672/sequential-recommendation-datasets/_apis/build/status/guocheng2018.sequential-recommendation-datasets?branchName=master)](https://dev.azure.com/guocheng672/sequential-recommendation-datasets/_build/latest?definitionId=1&branchName=master)
-![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/guocheng672/sequential-recommendation-datasets/1)
 [![codebeat badge](https://codebeat.co/badges/a6b38c4a-dffd-4318-9e69-969f57526b77)](https://codebeat.co/projects/github-com-guocheng2018-sequential-recommendation-datasets-master)
 
+# Sequential Recommendation Datasets
+
+This repository collects some commonly used sequential recommendation datasets in recent research papers and provides a tool for downloading, preprocessing and batch-loading those datasets. The preprocessing method can be customized based on the task, for example: short-term recommendation (including session-based recommendation) and long-short term recommendation. Loading has faster version which intergrates the DataLoader of PyTorch.
 
 ## Datasets
 
