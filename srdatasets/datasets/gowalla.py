@@ -22,11 +22,6 @@ class Gowalla(Dataset):
             sep="\t",
             names=["user_id", "check_in_time", "latitude", "longtitude", "location_id"],
             usecols=[0, 1, 4],
-            converters={
-                "check_in_time": lambda x: int(
-                    datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ").timestamp()
-                )
-            },
-        )
+            converters={"check_in_time": lambda x: int(datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ").timestamp())})
         df = df.rename(columns={"location_id": "item_id", "check_in_time": "timestamp"})
         return df

@@ -14,7 +14,6 @@ from tqdm import tqdm
 from srdatasets.datasets import dataset_classes
 from srdatasets.utils import __warehouse__
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +39,7 @@ def _process(args):
         "test_split": args.test_split,
         "task": args.task,
         "pre_sessions": args.pre_sessions,
-        "pick_targets": args.pick_targets,
+        "pick_targets": args.pick_targets
     }
     if classname in ["Amazon", "MovieLens20M", "Yelp"]:
         config["rating_threshold"] = args.rating_threshold
@@ -62,15 +61,9 @@ def _process(args):
     if args.split_by == "time":
         config["dev_split"], config["test_split"] = access_split_days(df)
         # Processed check
-        if (
-            "time_splits" in args
-            and (config["dev_split"], config["test_split"]) in args.time_splits
-        ):
-            logger.warning(
-                "You have run this config, the config id is {}".format(
-                    args.time_splits[(config["dev_split"], config["test_split"])]
-                )
-            )
+        if ("time_splits" in args and (config["dev_split"], config["test_split"]) in args.time_splits):
+            logger.warning("You have run this config, the config id is {}".format(
+                args.time_splits[(config["dev_split"], config["test_split"])]))
             sys.exit(1)
         config["max_timestamp"] = df["timestamp"].max()
 
@@ -128,16 +121,14 @@ def preprocess_and_save(df, dname, config):
     if config["remove_duplicates"]:
         logger.info("Removing duplicates...")
         train_seqs, test_seqs, dev_train_seqs, dev_test_seqs = [
-            remove_duplicates(seqs, config)
-            for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
+            remove_duplicates(seqs, config) for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
         ]
 
     # Do not use data augmentation (optional)
     if config["no_augment"]:
         logger.info("Enabling no data augmentation...")
         train_seqs, test_seqs, dev_train_seqs, dev_test_seqs = [
-            enable_no_augment(seqs, config)
-            for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
+            enable_no_augment(seqs, config) for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
         ]
 
     # Remove unknowns
@@ -162,15 +153,12 @@ def preprocess_and_save(df, dname, config):
 
     logger.info("Making datasets...")
     train_data, test_data, dev_train_data, dev_test_data = [
-        make_dataset(seqs, config)
-        for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
+        make_dataset(seqs, config) for seqs in [train_seqs, test_seqs, dev_train_seqs, dev_test_seqs]
     ]
 
     # Dump to disk
     logger.info("Dumping...")
-    processed_path = __warehouse__.joinpath(
-        dname, "processed", "c" + str(int(time.time() * 1000))
-    )
+    processed_path = __warehouse__.joinpath(dname, "processed", "c" + str(int(time.time() * 1000)))
     dump(processed_path, train_data, test_data, 0)
     dump(processed_path, dev_train_data, dev_test_data, 1)
 
@@ -187,7 +175,7 @@ def enable_no_augment(seqs, config):
     seqs_ = []
     if config["task"] == "short":
         for user_id, seq in tqdm(seqs):
-            seqs_.append((user_id, seq[-config["input_len"] - config["target_len"] :]))
+            seqs_.append((user_id, seq[-config["input_len"] - config["target_len"]:]))
     else:
         user_sessions = defaultdict(list)
         for user_id, seq in seqs:
@@ -210,9 +198,7 @@ def reassign_ids(train_seqs, test_seqs):
             if item not in item_to_idx:
                 item_to_idx[item] = len(item_to_idx) + 1
         # Reassign
-        train_seqs_.append(
-            (user_to_idx[user_id], [(item_to_idx[i], t) for i, t in seq])
-        )
+        train_seqs_.append((user_to_idx[user_id], [(item_to_idx[i], t) for i, t in seq]))
     for user_id, seq in tqdm(test_seqs):
         test_seqs_.append((user_to_idx[user_id], [(item_to_idx[i], t) for i, t in seq]))
     return train_seqs_, test_seqs_
@@ -245,14 +231,12 @@ def generate_sequences(df, config):
                 else:
                     if timestamp - seq[i - 1][1] > config["session_interval"] * 60:
                         if len(seq_buffer) >= config["min_session_len"]:
-                            _seqs.append(
-                                (user_id, seq_buffer[-config["max_session_len"] :])
-                            )
+                            _seqs.append((user_id, seq_buffer[-config["max_session_len"]:]))
                         seq_buffer = [(item_id, timestamp)]
                     else:
                         seq_buffer.append((item_id, timestamp))
             if len(seq_buffer) >= config["min_session_len"]:
-                _seqs.append((user_id, seq_buffer[-config["max_session_len"] :]))
+                _seqs.append((user_id, seq_buffer[-config["max_session_len"]:]))
         seqs = _seqs
     return seqs
 
@@ -263,9 +247,7 @@ def split_sequences(user_seq, config, mode):
     if config["split_by"] == "user":
         test_ratio = config["dev_split"] if mode else config["test_split"]
     else:
-        last_days = (
-            config["dev_split"] + config["test_split"] if mode else config["test_split"]
-        )
+        last_days = (config["dev_split"] + config["test_split"] if mode else config["test_split"])
         split_timestamp = config["max_timestamp"] - last_days * 86400
     train_seqs = []
     test_seqs = []
@@ -290,9 +272,7 @@ def split_sequences_session(user_seq, config, mode):
     if config["split_by"] == "user":
         test_ratio = config["dev_split"] if mode else config["test_split"]
     else:
-        last_days = (
-            config["dev_split"] + config["test_split"] if mode else config["test_split"]
-        )
+        last_days = (config["dev_split"] + config["test_split"] if mode else config["test_split"])
         split_timestamp = config["max_timestamp"] - last_days * 86400
     user_sessions = defaultdict(list)
     for user_id, seq in user_seq:
@@ -360,17 +340,15 @@ def make_targets(seq, config):
     if config["pick_targets"] == "random":
         indices = list(range(len(seq)))
         random.shuffle(indices)
-        cur_session_indices = sorted(indices[config["target_len"] :])
-        target_indices = sorted(indices[: config["target_len"]])
+        cur_session_indices = sorted(indices[config["target_len"]:])
+        target_indices = sorted(indices[:config["target_len"]])
         cur_session = [seq[i] for i in cur_session_indices]
         targets = [seq[i] for i in target_indices]
     else:
-        cur_session = seq[: -config["target_len"]]
-        targets = seq[-config["target_len"] :]
+        cur_session = seq[:-config["target_len"]]
+        targets = seq[-config["target_len"]:]
     # Padding
-    cur_session = [(0, -1)] * (
-        config["max_session_len"] - config["target_len"] - len(cur_session)
-    ) + cur_session
+    cur_session = [(0, -1)] * (config["max_session_len"] - config["target_len"] - len(cur_session)) + cur_session
     return cur_session, targets
 
 
@@ -396,28 +374,16 @@ def make_dataset_long_short(user_seq, config):
         else:
             for i in range(d):
                 pre_sessions = []
-                for s in sessions[i : i + n_pre_sessions]:
+                for s in sessions[i:i + n_pre_sessions]:
                     pre_sessions += [(0, -1)] * (max_session_len - len(s)) + s
-                cur_session, targets = make_targets(
-                    sessions[i + n_pre_sessions], config
-                )
+                cur_session, targets = make_targets(sessions[i + n_pre_sessions], config)
                 dataset.append((user_id, pre_sessions, cur_session, targets))
     dataset_ = []
     for data in dataset:
         pre_items, pre_times = list(zip(*data[1]))
         cur_items, cur_times = list(zip(*data[2]))
         target_items, target_times = list(zip(*data[3]))
-        dataset_.append(
-            (
-                data[0],
-                pre_items,
-                cur_items,
-                target_items,
-                pre_times,
-                cur_times,
-                target_times,
-            )
-        )
+        dataset_.append((data[0], pre_items, cur_items, target_items, pre_times, cur_times, target_times))
     return dataset_
 
 
@@ -430,22 +396,10 @@ def make_dataset_short(user_seq, config):
     for user_id, seq in tqdm(user_seq):
         if len(seq) <= input_len + target_len:
             padding_num = input_len + target_len - len(seq)
-            dataset.append(
-                (
-                    user_id,
-                    [(0, -1)] * padding_num + seq[:-target_len],
-                    seq[-target_len:],
-                )
-            )
+            dataset.append((user_id, [(0, -1)] * padding_num + seq[:-target_len], seq[-target_len:]))
         else:
-            augmented_seqs = [
-                (
-                    user_id,
-                    seq[i : i + input_len],
-                    seq[i + input_len : i + input_len + target_len],
-                )
-                for i in range(len(seq) - input_len - target_len + 1)
-            ]
+            augmented_seqs = [(user_id, seq[i:i + input_len], seq[i + input_len:i + input_len + target_len])
+                              for i in range(len(seq) - input_len - target_len + 1)]
             dataset.extend(augmented_seqs)
     dataset_ = []
     for data in dataset:
@@ -475,7 +429,7 @@ def cal_stats(train_data, test_data):
         "interactions": interactions,
         "density": interactions / len(users) / len(items),
         "train size": len(train_data),
-        "test size": len(test_data),
+        "test size": len(test_data)
     }
     return stats
 

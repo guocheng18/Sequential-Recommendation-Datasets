@@ -21,24 +21,19 @@ dataset_classes = {
     "TaFeng": TaFeng,
     "Taobao": Taobao,
     "Tmall": Tmall,
-    "Yelp": Yelp,
+    "Yelp": Yelp
 }
 
 amazon_datasets = ["Amazon-" + c for c in Amazon.__corefile__.keys()]
 foursquare_datasets = ["FourSquare-" + c for c in FourSquare.__corefile__.keys()]
 
-__datasets__ = (
-    amazon_datasets
-    + ["CiteULike"]
-    + foursquare_datasets
-    + [
-        "Gowalla",
-        "Lastfm1K",
-        "MovieLens20M",
-        "TaFeng",
-        "Retailrocket",
-        "Taobao",
-        "Tmall",
-        "Yelp",
-    ]
-)
+__datasets__ = (amazon_datasets + ["CiteULike"] + foursquare_datasets + [
+    "Gowalla",
+    "Lastfm1K",
+    "MovieLens20M",
+    "TaFeng",
+    "Retailrocket",
+    "Taobao",
+    "Tmall",
+    "Yelp",
+])

@@ -13,7 +13,7 @@ class FourSquare(Dataset):
 
     __corefile__ = {
         "NYC": os.path.join("dataset_tsmc2014", "dataset_TSMC2014_NYC.txt"),
-        "Tokyo": os.path.join("dataset_tsmc2014", "dataset_TSMC2014_TKY.txt"),
+        "Tokyo": os.path.join("dataset_tsmc2014", "dataset_TSMC2014_TKY.txt")
     }
 
     def download(self):
@@ -28,21 +28,10 @@ class FourSquare(Dataset):
             sep="\t",
             header=None,
             names=[
-                "user_id",
-                "venue_id",
-                "venue_category_id",
-                "venue_category_name",
-                "latitude",
-                "longtitude",
-                "timezone_offset",
-                "utc_time",
+                "user_id", "venue_id", "venue_category_id", "venue_category_name", "latitude", "longtitude",
+                "timezone_offset", "utc_time"
             ],
             usecols=[0, 1, 7],
-            converters={
-                "utc_time": lambda x: int(
-                    datetime.strptime(x, "%a %b %d %H:%M:%S %z %Y").timestamp()
-                )
-            },
-        )
+            converters={"utc_time": lambda x: int(datetime.strptime(x, "%a %b %d %H:%M:%S %z %Y").timestamp())})
         df = df.rename(columns={"venue_id": "item_id", "utc_time": "timestamp"})
         return df

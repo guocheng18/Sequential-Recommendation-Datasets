@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 class DownloadProgressBar(tqdm):
     """ From https://stackoverflow.com/a/53877507/8810037
     """
-
     def update_to(self, b=1, bsize=1, tsize=None):
         if tsize is not None:
             self.total = tsize
@@ -24,12 +23,8 @@ class DownloadProgressBar(tqdm):
 
 def download_url(url, output_path):
     try:
-        with DownloadProgressBar(
-            unit="B", unit_scale=True, miniters=1, desc=url.split("/")[-1]
-        ) as t:
-            urllib.request.urlretrieve(
-                url, filename=output_path, reporthook=t.update_to
-            )
+        with DownloadProgressBar(unit="B", unit_scale=True, miniters=1, desc=url.split("/")[-1]) as t:
+            urllib.request.urlretrieve(url, filename=output_path, reporthook=t.update_to)
         logger.info("Download successful")
     except:
         logger.exception("Download failed, please try again")

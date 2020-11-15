@@ -16,15 +16,13 @@ class CiteULike(Dataset):
         extract(self.rawpath, self.rootdir)
 
     def transform(self):
-        df = pd.read_csv(
-            self.rootdir.joinpath(self.__corefile__),
-            sep=" ",
-            header=None,
-            index_col=False,
-            names=["user_id", "tag_id", "positive", "timestamp"],
-            usecols=[0, 1, 3],
-            comment="%",
-            converters={"timestamp": lambda x: int(float(x))},
-        )
+        df = pd.read_csv(self.rootdir.joinpath(self.__corefile__),
+                         sep=" ",
+                         header=None,
+                         index_col=False,
+                         names=["user_id", "tag_id", "positive", "timestamp"],
+                         usecols=[0, 1, 3],
+                         comment="%",
+                         converters={"timestamp": lambda x: int(float(x))})
         df = df.rename(columns={"tag_id": "item_id"})
         return df

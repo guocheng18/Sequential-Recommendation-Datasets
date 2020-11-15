@@ -15,19 +15,18 @@ class Retailrocket(Dataset):
     def download(self):
         if not self.rootdir.joinpath("ecommerce-dataset.zip").exists():
             logger.warning(
-                "Since RetailRocket dataset is not directly accessible, please visit https://www.kaggle.com/retailrocket/ecommerce-dataset and download it manually, after downloaded, place file 'ecommerce-dataset.zip' under %s and run this command again",
-                self.rootdir,
-            )
+                "Since RetailRocket dataset is not directly accessible, please visit \
+                    https://www.kaggle.com/retailrocket/ecommerce-dataset and download \
+                    it manually, after downloaded, place file 'ecommerce-dataset.zip' \
+                    under %s and run this command again", self.rootdir)
         else:
             extract(self.rootdir.joinpath("ecommerce-dataset.zip"), self.rootdir)
 
     def transform(self):
-        df = pd.read_csv(
-            self.rootdir.joinpath(self.__corefile__),
-            header=0,
-            index_col=False,
-            usecols=[0, 1, 3],
-            converters={"timestamp": lambda x: int(int(x) / 1000)},
-        )
+        df = pd.read_csv(self.rootdir.joinpath(self.__corefile__),
+                         header=0,
+                         index_col=False,
+                         usecols=[0, 1, 3],
+                         converters={"timestamp": lambda x: int(int(x) / 1000)})
         df = df.rename(columns={"visitorid": "user_id", "itemid": "item_id"})
         return df

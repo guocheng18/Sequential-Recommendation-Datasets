@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 class Dataset(ABC):
     """ Base dataset of SR datasets
     """
-
     def __init__(self, rootdir):
         """ `rootdir` is the directory of the raw dataset """
         self.rootdir = rootdir

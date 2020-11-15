@@ -23,24 +23,9 @@ class TaFeng(Dataset):
                 sep=";",
                 header=0,
                 index_col=False,
-                names=[
-                    "timestamp",
-                    "user_id",
-                    "age",
-                    "area",
-                    "pcate",
-                    "item_id",
-                    "number",
-                    "cost",
-                    "price",
-                ],
+                names=["timestamp", "user_id", "age", "area", "pcate", "item_id", "number", "cost", "price"],
                 usecols=[0, 1, 5],
                 encoding="big5",
-                converters={
-                    "timestamp": lambda x: int(
-                        datetime.strptime(x, "%Y-%m-%d %H:%M:%S").timestamp()
-                    )
-                },
-            )
+                converters={"timestamp": lambda x: int(datetime.strptime(x, "%Y-%m-%d %H:%M:%S").timestamp())})
             dfs.append(df)
         return pd.concat(dfs, ignore_index=True)
